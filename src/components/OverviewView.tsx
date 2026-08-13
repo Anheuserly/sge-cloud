@@ -10,8 +10,9 @@ import {
   Terminal,
   Table as TableIcon,
   ArrowUpRight,
-  Database,
   Cpu,
+  CloudOff,
+  RefreshCw,
 } from 'lucide-react';
 import {
   BarChart,
@@ -31,6 +32,7 @@ interface OverviewViewProps {
   onOpenSql: () => void;
   isLoading: boolean;
   presetName: string;
+  onRefresh: () => void;
 }
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
@@ -41,8 +43,9 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   onOpenSql,
   isLoading,
   presetName,
+  onRefresh,
 }) => {
-  if (isLoading || !overview) {
+  if (isLoading) {
     return (
       <div className="p-6 space-y-6">
         <div className="h-8 w-64 bg-slate-800/60 rounded-xl animate-pulse" />
@@ -52,6 +55,44 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           ))}
         </div>
         <div className="h-64 rounded-2xl bg-slate-800/40 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!overview) {
+    return (
+      <div className="flex min-h-full items-center justify-center p-6 md:p-10">
+        <section className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 shadow-2xl shadow-black/20">
+          <div className="border-b border-slate-800 bg-slate-950/50 px-6 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-400">
+              Connection status
+            </p>
+          </div>
+          <div className="flex flex-col items-start gap-5 p-6 sm:flex-row sm:p-8">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-300">
+              <CloudOff className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-semibold text-white">Database connection unavailable</h1>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
+                SGE Cloud could not reach {presetName}. Check the VPS connection settings or select another database from the sidebar.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-500 px-4 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Retry connection
+                </button>
+                <div className="flex h-10 items-center rounded-lg border border-slate-800 bg-slate-950/60 px-3 font-mono text-xs text-slate-400">
+                  VPS / PostgreSQL
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }

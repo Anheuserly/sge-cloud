@@ -9,7 +9,7 @@ import { SqlQueryView } from '@/components/SqlQueryView';
 import { CustomConnectionModal } from '@/components/CustomConnectionModal';
 import { Toast } from '@/components/Toast';
 import { TableInfo, DatabaseOverview, ToastMessage } from '@/types/database';
-import { DATABASE_PRESETS } from '@/lib/db';
+import { DATABASE_PRESETS } from '@/lib/constants';
 
 export default function Home() {
   const [currentPreset, setCurrentPreset] = useState<string>('amcmep');
@@ -20,6 +20,7 @@ export default function Home() {
   const [selectedTable, setSelectedTable] = useState<TableInfo | null>(null);
   const [overview, setOverview] = useState<DatabaseOverview | null>(null);
   const [topTables, setTopTables] = useState<any[]>([]);
+  const [dynamicDatabases, setDynamicDatabases] = useState<{ id: string; name: string }[]>([]);
 
   const [isConnected, setIsConnected] = useState(false);
   const [isTesting, setIsTesting] = useState(true);
@@ -90,13 +91,15 @@ export default function Home() {
       if (activeUrl) queryParams.set('url', activeUrl);
       else queryParams.set('preset', activePreset);
 
-      const [tablesRes, overviewRes] = await Promise.all([
+      const [tablesRes, overviewRes, dbListRes] = await Promise.all([
         fetch(`/api/db/tables?${queryParams.toString()}`),
         fetch(`/api/db/overview?${queryParams.toString()}`),
+        fetch(`/api/db/databases?${queryParams.toString()}`),
       ]);
 
       const tablesJson = await tablesRes.json();
       const overviewJson = await overviewRes.json();
+      const dbListJson = await dbListRes.json();
 
       if (tablesJson.success) {
         setTables(tablesJson.tables || []);
@@ -108,6 +111,10 @@ export default function Home() {
       if (overviewJson.success) {
         setOverview(overviewJson.info);
         setTopTables(overviewJson.topTables || []);
+      }
+
+      if (dbListJson.success && dbListJson.databases) {
+        setDynamicDatabases(dbListJson.databases);
       }
     } catch (e: any) {
       showToast('Error loading schema', 'error', e.message);
@@ -146,7 +153,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* Top Header Navbar */}
+      {/* Top Header Navbar with Database Selector Outside Side Nav */}
       <Navbar
         currentPreset={currentPreset}
         customUrl={customUrl}
@@ -158,11 +165,12 @@ export default function Home() {
         activeView={activeView}
         setActiveView={setActiveView}
         dbName={overview?.databaseName}
+        dynamicDatabases={dynamicDatabases}
       />
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar */}
+        {/* Left Sidebar (Only Workspace Navigation & Tables list) */}
         <Sidebar
           tables={tables}
           selectedTable={selectedTable}
@@ -190,6 +198,7 @@ export default function Home() {
               onOpenSql={() => setActiveView('sql')}
               isLoading={isLoadingTables}
               presetName={presetName}
+              onRefresh={() => loadDatabase()}
             />
           ) : activeView === 'table' && selectedTable ? (
             <TableDataView

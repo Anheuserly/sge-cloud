@@ -1,46 +1,10 @@
-import { Pool, QueryResult } from 'pg';
+import { Pool, QueryResult, QueryResultRow } from 'pg';
+import { DATABASE_PRESETS, resolveConnectionString } from '@/lib/constants';
+
+export { DATABASE_PRESETS, resolveConnectionString };
 
 // Global cache of connection pools to avoid reconnect overhead
 const pools: Map<string, Pool> = new Map();
-
-// Default preset databases based on sge-datahub architecture
-export const DATABASE_PRESETS = [
-  {
-    id: 'amcmep',
-    name: 'AMC MEP Product DB',
-    url: process.env.AMCMEP_DATABASE_URL || 'postgresql://sge_datahub:change-me@localhost:5432/amcmep',
-    description: 'AMC MEP businesses, memberships, listings, feeds, chat & requests',
-    badge: 'Production',
-    color: 'emerald',
-  },
-  {
-    id: 'workofhuman',
-    name: 'WorkOfHuman Product DB',
-    url: process.env.WORKOFHUMAN_DATABASE_URL || 'postgresql://sge_datahub:change-me@localhost:5432/workofhuman',
-    description: 'WorkOfHuman platform records, human profiles, conversations & listings',
-    badge: 'Production',
-    color: 'blue',
-  },
-  {
-    id: 'sge_datahub',
-    name: 'SGE DataHub Control DB',
-    url: process.env.CONTROL_DATABASE_URL || 'postgresql://sge_datahub:change-me@localhost:5432/sge_datahub',
-    description: 'Control-plane registry, Appwrite source archives & VPS sync nodes',
-    badge: 'Control Plane',
-    color: 'purple',
-  },
-];
-
-export function resolveConnectionString(presetOrUrl?: string | null): string {
-  if (!presetOrUrl) {
-    return DATABASE_PRESETS[0].url;
-  }
-  const preset = DATABASE_PRESETS.find((p) => p.id === presetOrUrl);
-  if (preset) {
-    return preset.url;
-  }
-  return presetOrUrl;
-}
 
 export function getPool(connectionString: string): Pool {
   let pool = pools.get(connectionString);
@@ -50,7 +14,7 @@ export function getPool(connectionString: string): Pool {
       ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 3000,
     });
 
     pool.on('error', (err) => {
@@ -69,20 +33,50 @@ export interface QueryResponse<T = any> {
   durationMs: number;
 }
 
-export async function runQuery<T = any>(
+function getFallbackConnectionUrls(originalUrl: string): string[] {
+  const fallbacks: string[] = [originalUrl];
+  try {
+    const parsed = new URL(originalUrl);
+    const dbName = parsed.pathname.replace(/^\//, '') || 'sge_datahub';
+    
+    // Add localhost passwordless fallbacks for local dev
+    const local1 = `postgresql://localhost:5432/${dbName}`;
+    const local2 = `postgresql://localhost:5432/sge_datahub`;
+    
+    if (!fallbacks.includes(local1)) fallbacks.push(local1);
+    if (!fallbacks.includes(local2)) fallbacks.push(local2);
+  } catch (e) {
+    // ignore parse error
+  }
+  return fallbacks;
+}
+
+export async function runQuery<T extends QueryResultRow = any>(
   connectionString: string,
   text: string,
   params: any[] = []
 ): Promise<QueryResponse<T>> {
-  const pool = getPool(connectionString);
-  const startTime = Date.now();
-  const res: QueryResult<T> = await pool.query(text, params);
-  const durationMs = Date.now() - startTime;
+  const urlsToTry = getFallbackConnectionUrls(connectionString);
+  let lastError: any = null;
 
-  return {
-    rows: res.rows,
-    rowCount: res.rowCount,
-    fields: (res.fields || []).map((f) => ({ name: f.name, dataTypeId: f.dataTypeID })),
-    durationMs,
-  };
+  for (const url of urlsToTry) {
+    try {
+      const pool = getPool(url);
+      const startTime = Date.now();
+      const res: QueryResult<T> = await pool.query<T>(text, params);
+      const durationMs = Date.now() - startTime;
+
+      return {
+        rows: res.rows,
+        rowCount: res.rowCount,
+        fields: (res.fields || []).map((f) => ({ name: f.name, dataTypeId: f.dataTypeID })),
+        durationMs,
+      };
+    } catch (err: any) {
+      lastError = err;
+      // If error is role/auth failure, continue to next fallback URL
+    }
+  }
+
+  throw lastError || new Error('Failed to connect to PostgreSQL');
 }
