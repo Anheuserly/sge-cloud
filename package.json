@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "pages:build": "npx opennextjs-cloudflare build",
+    "build": "opennextjs-cloudflare build",
+    "next:build": "next build",
+    "pages:build": "opennextjs-cloudflare build",
     "preview": "npx opennextjs-cloudflare preview",
     "deploy": "npx opennextjs-cloudflare deploy",
     "start": "next start",
