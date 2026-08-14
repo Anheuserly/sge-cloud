@@ -21,6 +21,7 @@ interface SidebarProps {
   setActiveView: (view: 'overview' | 'table' | 'sql') => void;
   isLoading: boolean;
   currentDatabaseName?: string;
+  isConnected: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -31,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveView,
   isLoading,
   currentDatabaseName,
+  isConnected,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSchema, setSelectedSchema] = useState<string>('all');
@@ -130,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : filteredTables.length === 0 ? (
           <div className="p-6 text-center text-xs text-slate-500 space-y-2">
             <DatabaseZap className="w-8 h-8 mx-auto opacity-30 text-slate-400" />
-            <p>No tables found matching query.</p>
+            <p>{isConnected ? 'No tables found matching query.' : 'Connect to a real PostgreSQL database to load tables.'}</p>
           </div>
         ) : (
           filteredTables.map((table) => {
@@ -179,11 +181,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center space-x-1.5">
           <Database className="w-3.5 h-3.5 text-cyan-400" />
           <span className="truncate max-w-[140px] font-mono text-slate-300">
-            {currentDatabaseName || 'PostgreSQL'}
+            {isConnected ? currentDatabaseName || 'PostgreSQL' : 'No database'}
           </span>
         </div>
-        <span className="text-[10px] text-emerald-400 font-semibold px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60">
-          Connected
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
+          isConnected
+            ? 'text-emerald-400 bg-emerald-950/80 border-emerald-800/60'
+            : 'text-rose-400 bg-rose-950/80 border-rose-800/60'
+        }`}>
+          {isConnected ? 'Connected' : 'Offline'}
         </span>
       </div>
     </aside>

@@ -32,6 +32,7 @@ interface OverviewViewProps {
   onOpenSql: () => void;
   isLoading: boolean;
   presetName: string;
+  connectionError?: string;
   onRefresh: () => void;
 }
 
@@ -43,6 +44,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   onOpenSql,
   isLoading,
   presetName,
+  connectionError,
   onRefresh,
 }) => {
   if (isLoading) {
@@ -77,6 +79,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
                 SGE Cloud could not reach {presetName}. Check the VPS connection settings or select another database from the sidebar.
               </p>
+              {connectionError && (
+                <p className="mt-3 max-w-xl rounded-lg border border-rose-900/60 bg-rose-950/30 px-3 py-2 font-mono text-xs leading-5 text-rose-200">
+                  {connectionError}
+                </p>
+              )}
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
                   type="button"

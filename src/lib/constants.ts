@@ -4,7 +4,7 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'amcmep',
     name: 'AMC MEP App DB',
-    url: process.env.AMCMEP_DATABASE_URL || 'postgresql://localhost:5432/amcmep',
+    envVars: ['AMCMEP_DATABASE_URL', 'DATABASE_URL'],
     description: 'AMC MEP App Database (businesses, memberships, listings, chat & requests)',
     badge: 'AMC MEP App',
     color: 'emerald',
@@ -12,7 +12,7 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'workofhuman',
     name: 'WorkOfHuman App DB',
-    url: process.env.WORKOFHUMAN_DATABASE_URL || 'postgresql://localhost:5432/workofhuman',
+    envVars: ['WORKOFHUMAN_DATABASE_URL'],
     description: 'WorkOfHuman App Database (empty schema for custom WorkOfHuman models)',
     badge: 'WorkOfHuman App',
     color: 'blue',
@@ -20,7 +20,7 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'sge_datahub',
     name: 'SGE DataHub Control DB',
-    url: process.env.CONTROL_DATABASE_URL || 'postgresql://localhost:5432/sge_datahub',
+    envVars: ['CONTROL_DATABASE_URL'],
     description: 'SGE DataHub Control Plane registry & node metadata',
     badge: 'Control Plane',
     color: 'purple',
@@ -28,12 +28,21 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
 ];
 
 export function resolveConnectionString(presetOrUrl?: string | null): string {
-  if (!presetOrUrl) {
-    return DATABASE_PRESETS[0].url;
+  const target = presetOrUrl || DATABASE_PRESETS[0].id;
+  const preset = DATABASE_PRESETS.find((p) => p.id === target);
+
+  if (!preset) {
+    if (/^postgres(ql)?:\/\//i.test(target)) {
+      return target;
+    }
+
+    throw new Error(`Unknown database target "${target}". Select a configured database preset or provide a PostgreSQL connection URL.`);
   }
-  const preset = DATABASE_PRESETS.find((p) => p.id === presetOrUrl);
-  if (preset) {
-    return preset.url;
+
+  const url = preset.envVars.map((envVar) => process.env[envVar]).find(Boolean);
+  if (!url || /change-me|localhost|127\.0\.0\.1/i.test(url)) {
+    throw new Error(`Database preset "${preset.name}" is not configured. Set one of these Cloudflare secrets to the real VPS PostgreSQL URL: ${preset.envVars.join(', ')}.`);
   }
-  return presetOrUrl;
+
+  return url;
 }

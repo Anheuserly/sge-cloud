@@ -77,7 +77,7 @@ export const CustomConnectionModal: React.FC<CustomConnectionModalProps> = ({
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="postgresql://user:password@localhost:5432/dbname"
+              placeholder="postgresql://user:password@vps.example.com:5432/dbname"
               className="w-full glass-input px-3.5 py-2.5 rounded-xl text-xs font-mono placeholder:text-slate-600 focus:ring-2 focus:ring-cyan-500"
             />
             <p className="text-[11px] text-slate-500">

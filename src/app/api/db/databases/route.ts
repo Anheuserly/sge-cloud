@@ -22,7 +22,6 @@ export async function GET(req: NextRequest) {
     const databases = res.rows.map((row) => ({
       id: row.datname,
       name: row.datname,
-      url: `postgresql://localhost:5432/${row.datname}`,
     }));
 
     return NextResponse.json({

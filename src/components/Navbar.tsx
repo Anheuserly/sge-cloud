@@ -15,7 +15,6 @@ interface NavbarProps {
   activeView: 'overview' | 'table' | 'sql';
   setActiveView: (view: 'overview' | 'table' | 'sql') => void;
   dbName?: string;
-  dynamicDatabases?: { id: string; name: string }[];
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -29,7 +28,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeView,
   setActiveView,
   dbName,
-  dynamicDatabases = [],
 }) => {
   return (
     <header className="h-16 border-b border-slate-800/80 glass-panel sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
@@ -44,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               SGE CLOUD
             </span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/50">
-              v1.0 Local
+              v1.0 Cloud
             </span>
           </div>
           <p className="text-xs text-slate-400 hidden md:block">
@@ -105,14 +103,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {preset.name} ({preset.id})
                 </option>
               ))}
-
-              {dynamicDatabases
-                .filter((d) => !DATABASE_PRESETS.some((p) => p.id === d.id))
-                .map((db) => (
-                  <option key={db.id} value={db.id} className="bg-slate-900 text-slate-100 font-semibold">
-                    {db.name}
-                  </option>
-                ))}
 
               <option value="custom" className="bg-slate-900 text-cyan-400 font-bold">
                 + Add Custom URI...

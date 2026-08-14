@@ -1,7 +1,7 @@
 export interface DatabasePreset {
   id: string;
   name: string;
-  url: string;
+  envVars: string[];
   description: string;
   badge: string;
   color: string;

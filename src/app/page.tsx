@@ -20,11 +20,11 @@ export default function Home() {
   const [selectedTable, setSelectedTable] = useState<TableInfo | null>(null);
   const [overview, setOverview] = useState<DatabaseOverview | null>(null);
   const [topTables, setTopTables] = useState<any[]>([]);
-  const [dynamicDatabases, setDynamicDatabases] = useState<{ id: string; name: string }[]>([]);
 
   const [isConnected, setIsConnected] = useState(false);
   const [isTesting, setIsTesting] = useState(true);
   const [isLoadingTables, setIsLoadingTables] = useState(true);
+  const [connectionError, setConnectionError] = useState<string>('');
 
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -57,15 +57,20 @@ export default function Home() {
       const json = await res.json();
       if (json.success) {
         setIsConnected(true);
+        setConnectionError('');
         return true;
       } else {
+        const message = json.error || 'Failed to connect to database';
         setIsConnected(false);
-        showToast('Connection Error', 'error', json.error || 'Failed to connect to database');
+        setConnectionError(message);
+        showToast('Connection Error', 'error', message);
         return false;
       }
     } catch (e: any) {
+      const message = e.message || 'Network failure connecting to database';
       setIsConnected(false);
-      showToast('Database Error', 'error', e.message || 'Network failure connecting to database');
+      setConnectionError(message);
+      showToast('Database Error', 'error', message);
       return false;
     } finally {
       setIsTesting(false);
@@ -91,15 +96,13 @@ export default function Home() {
       if (activeUrl) queryParams.set('url', activeUrl);
       else queryParams.set('preset', activePreset);
 
-      const [tablesRes, overviewRes, dbListRes] = await Promise.all([
+      const [tablesRes, overviewRes] = await Promise.all([
         fetch(`/api/db/tables?${queryParams.toString()}`),
         fetch(`/api/db/overview?${queryParams.toString()}`),
-        fetch(`/api/db/databases?${queryParams.toString()}`),
       ]);
 
       const tablesJson = await tablesRes.json();
       const overviewJson = await overviewRes.json();
-      const dbListJson = await dbListRes.json();
 
       if (tablesJson.success) {
         setTables(tablesJson.tables || []);
@@ -113,9 +116,6 @@ export default function Home() {
         setTopTables(overviewJson.topTables || []);
       }
 
-      if (dbListJson.success && dbListJson.databases) {
-        setDynamicDatabases(dbListJson.databases);
-      }
     } catch (e: any) {
       showToast('Error loading schema', 'error', e.message);
     } finally {
@@ -165,7 +165,6 @@ export default function Home() {
         activeView={activeView}
         setActiveView={setActiveView}
         dbName={overview?.databaseName}
-        dynamicDatabases={dynamicDatabases}
       />
 
       {/* Main Workspace Layout */}
@@ -182,6 +181,7 @@ export default function Home() {
           setActiveView={setActiveView}
           isLoading={isLoadingTables}
           currentDatabaseName={overview?.databaseName}
+          isConnected={isConnected}
         />
 
         {/* Center Workspace Content Area */}
@@ -198,6 +198,7 @@ export default function Home() {
               onOpenSql={() => setActiveView('sql')}
               isLoading={isLoadingTables}
               presetName={presetName}
+              connectionError={connectionError}
               onRefresh={() => loadDatabase()}
             />
           ) : activeView === 'table' && selectedTable ? (
