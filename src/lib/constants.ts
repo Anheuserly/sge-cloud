@@ -4,7 +4,7 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'amcmep',
     name: 'AMC MEP App DB',
-    envVars: ['SGE_AMCMEP_DATABASE_URL'],
+    envVars: ['SGE_AMCMEP_DATABASE_URL', 'AMCMEP_DATABASE_URL', 'DATABASE_URL'],
     description: 'AMC MEP App Database (businesses, memberships, listings, chat & requests)',
     badge: 'AMC MEP App',
     color: 'emerald',
@@ -12,7 +12,7 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'workofhuman',
     name: 'WorkOfHuman App DB',
-    envVars: ['SGE_WORKOFHUMAN_DATABASE_URL'],
+    envVars: ['SGE_WORKOFHUMAN_DATABASE_URL', 'WORKOFHUMAN_DATABASE_URL'],
     description: 'WorkOfHuman App Database (empty schema for custom WorkOfHuman models)',
     badge: 'WorkOfHuman App',
     color: 'blue',
@@ -20,7 +20,7 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'sge_datahub',
     name: 'SGE DataHub Control DB',
-    envVars: ['SGE_CONTROL_DATABASE_URL'],
+    envVars: ['SGE_CONTROL_DATABASE_URL', 'CONTROL_DATABASE_URL'],
     description: 'SGE DataHub general control database (infrastructure nodes and project registry only)',
     badge: 'Control Plane',
     color: 'purple',

@@ -6,7 +6,7 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "keep_vars": false,
+  "keep_vars": true,
   "routes": [
     {
       "pattern": "cloud.sge.amcmep.in",
