@@ -3,26 +3,19 @@ import { DATABASE_PRESETS, resolveConnectionString } from '@/lib/constants';
 
 export { DATABASE_PRESETS, resolveConnectionString };
 
-// Global cache of connection pools to avoid reconnect overhead
-const pools: Map<string, Pool> = new Map();
+export function createPool(connectionString: string): Pool {
+  const pool = new Pool({
+    connectionString,
+    ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    max: 1,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 3000,
+  });
 
-export function getPool(connectionString: string): Pool {
-  let pool = pools.get(connectionString);
-  if (!pool) {
-    pool = new Pool({
-      connectionString,
-      ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
-      max: 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 3000,
-    });
+  pool.on('error', (err) => {
+    console.error('Unexpected PostgreSQL pool error:', err);
+  });
 
-    pool.on('error', (err) => {
-      console.error('Unexpected error on idle PostgreSQL client:', err);
-    });
-
-    pools.set(connectionString, pool);
-  }
   return pool;
 }
 
@@ -61,17 +54,21 @@ export async function runQuery<T extends QueryResultRow = any>(
 
   for (const url of urlsToTry) {
     try {
-      const pool = getPool(url);
+      const pool = createPool(url);
       const startTime = Date.now();
-      const res: QueryResult<T> = await pool.query<T>(text, params);
-      const durationMs = Date.now() - startTime;
+      try {
+        const res: QueryResult<T> = await pool.query<T>(text, params);
+        const durationMs = Date.now() - startTime;
 
-      return {
-        rows: res.rows,
-        rowCount: res.rowCount,
-        fields: (res.fields || []).map((f) => ({ name: f.name, dataTypeId: f.dataTypeID })),
-        durationMs,
-      };
+        return {
+          rows: res.rows,
+          rowCount: res.rowCount,
+          fields: (res.fields || []).map((f) => ({ name: f.name, dataTypeId: f.dataTypeID })),
+          durationMs,
+        };
+      } finally {
+        await pool.end();
+      }
     } catch (err: any) {
       lastError = err;
       // If error is role/auth failure, continue to next fallback URL

@@ -146,7 +146,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
   const handleSaveRecord = async (data: Record<string, any>) => {
     setIsMutating(true);
     try {
-      let payload: any = {
+      const payload: any = {
         action: modalMode === 'create' ? 'INSERT' : 'UPDATE',
         table: table.table_name,
         schema: table.table_schema,
