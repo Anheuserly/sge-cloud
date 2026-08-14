@@ -7,6 +7,18 @@
     "nodejs_compat"
   ],
   "keep_vars": true,
+  "routes": [
+    {
+      "pattern": "cloud.sge.amcmep.in",
+      "zone_name": "amcmep.in",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.cloud.sge.amcmep.in",
+      "zone_name": "amcmep.in",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

@@ -28,7 +28,10 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
 ];
 
 export function isUsableConnectionString(url?: string): url is string {
-  return Boolean(url && !/change-me|localhost|127\.0\.0\.1/i.test(url));
+  return Boolean(
+    url &&
+      !/change-me|real_password|your[_-]?password|user:password|localhost|127\.0\.0\.1|vps\.example\.com/i.test(url)
+  );
 }
 
 export function getConfiguredDatabasePresets(): DatabasePreset[] {
