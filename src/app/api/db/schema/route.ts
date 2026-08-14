@@ -9,13 +9,12 @@ export async function GET(req: NextRequest) {
     const table = searchParams.get('table');
     const schema = searchParams.get('schema') || 'public';
     const preset = searchParams.get('preset');
-    const customUrl = searchParams.get('url');
 
     if (!table) {
       return NextResponse.json({ success: false, error: 'Table parameter is required' }, { status: 400 });
     }
 
-    const connectionString = resolveConnectionString(customUrl || preset);
+    const connectionString = resolveConnectionString(preset);
 
     // Fetch column definitions
     const columnsQuery = `

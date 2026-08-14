@@ -5,14 +5,12 @@ import { Terminal, Play, RefreshCw, Download, FileCode, AlertCircle, Sparkles } 
 
 interface SqlQueryViewProps {
   preset: string;
-  customUrl: string;
   onShowToast: (title: string, type: 'success' | 'error' | 'info') => void;
   tableName?: string;
 }
 
 export const SqlQueryView: React.FC<SqlQueryViewProps> = ({
   preset,
-  customUrl,
   onShowToast,
   tableName,
 }) => {
@@ -50,9 +48,7 @@ export const SqlQueryView: React.FC<SqlQueryViewProps> = ({
     setError(null);
 
     try {
-      const payload: any = { sql };
-      if (customUrl) payload.url = customUrl;
-      else payload.preset = preset;
+      const payload = { sql, preset };
 
       const res = await fetch('/api/db/query', {
         method: 'POST',

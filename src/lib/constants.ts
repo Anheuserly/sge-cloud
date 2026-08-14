@@ -4,7 +4,7 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'amcmep',
     name: 'AMC MEP App DB',
-    envVars: ['AMCMEP_DATABASE_URL', 'DATABASE_URL'],
+    envVars: ['SGE_AMCMEP_DATABASE_URL'],
     description: 'AMC MEP App Database (businesses, memberships, listings, chat & requests)',
     badge: 'AMC MEP App',
     color: 'emerald',
@@ -12,7 +12,7 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'workofhuman',
     name: 'WorkOfHuman App DB',
-    envVars: ['WORKOFHUMAN_DATABASE_URL'],
+    envVars: ['SGE_WORKOFHUMAN_DATABASE_URL'],
     description: 'WorkOfHuman App Database (empty schema for custom WorkOfHuman models)',
     badge: 'WorkOfHuman App',
     color: 'blue',
@@ -20,8 +20,8 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   {
     id: 'sge_datahub',
     name: 'SGE DataHub Control DB',
-    envVars: ['CONTROL_DATABASE_URL'],
-    description: 'SGE DataHub Control Plane registry & node metadata',
+    envVars: ['SGE_CONTROL_DATABASE_URL'],
+    description: 'SGE DataHub general control database (infrastructure nodes and project registry only)',
     badge: 'Control Plane',
     color: 'purple',
   },
@@ -45,16 +45,12 @@ export function resolveConnectionString(presetOrUrl?: string | null): string {
   const preset = DATABASE_PRESETS.find((p) => p.id === target);
 
   if (!preset) {
-    if (/^postgres(ql)?:\/\//i.test(target)) {
-      return target;
-    }
-
-    throw new Error(`Unknown database target "${target}". Select a configured database preset or provide a PostgreSQL connection URL.`);
+    throw new Error(`Unknown database target "${target}". Select a configured database preset.`);
   }
 
   const url = preset.envVars.map((envVar) => process.env[envVar]).find(isUsableConnectionString);
   if (!url) {
-    throw new Error(`Database preset "${preset.name}" is not configured. Set one of these Cloudflare secrets to the real VPS PostgreSQL URL: ${preset.envVars.join(', ')}.`);
+    throw new Error(`Database preset "${preset.name}" is not configured. Set this Worker secret: ${preset.envVars.join(', ')}.`);
   }
 
   return url;

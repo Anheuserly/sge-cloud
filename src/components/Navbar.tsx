@@ -1,37 +1,35 @@
 'use client';
 
 import React from 'react';
-import { Database, Server, RefreshCw, CheckCircle2, AlertCircle, Plus, Terminal, ChevronDown } from 'lucide-react';
+import { Database, Server, RefreshCw, CheckCircle2, AlertCircle, Terminal, ChevronDown, ShieldCheck } from 'lucide-react';
 import { DatabasePreset } from '@/types/database';
+
+type ActiveView = 'overview' | 'table' | 'sql' | 'platform';
 
 interface NavbarProps {
   currentPreset: string;
-  customUrl: string;
   isConnected: boolean;
   isTesting: boolean;
   onSelectPreset: (presetId: string) => void;
-  onOpenCustomModal: () => void;
   onRefresh: () => void;
-  activeView: 'overview' | 'table' | 'sql';
-  setActiveView: (view: 'overview' | 'table' | 'sql') => void;
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => void;
   dbName?: string;
   databasePresets: Pick<DatabasePreset, 'id' | 'name'>[];
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentPreset,
-  customUrl,
   isConnected,
   isTesting,
   onSelectPreset,
-  onOpenCustomModal,
   onRefresh,
   activeView,
   setActiveView,
   dbName,
   databasePresets,
 }) => {
-  const selectorValue = customUrl ? 'custom' : currentPreset || '';
+  const selectorValue = currentPreset || '';
 
   return (
     <header className="h-16 border-b border-slate-800/80 glass-panel sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
@@ -80,6 +78,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Terminal className="w-3.5 h-3.5" />
           <span>SQL Workspace</span>
         </button>
+
+        <button
+          onClick={() => setActiveView('platform')}
+          className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            activeView === 'platform'
+              ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>Platform Access</span>
+        </button>
       </div>
 
       {/* Right Area: Database Selector Outside Side Nav */}
@@ -95,11 +105,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               value={selectorValue}
               onChange={(e) => {
                 if (e.target.value === 'custom') {
-                  onOpenCustomModal();
+                  return;
                 } else if (e.target.value) {
                   onSelectPreset(e.target.value);
-                } else {
-                  onOpenCustomModal();
                 }
               }}
               className="bg-transparent text-xs font-bold text-slate-100 cursor-pointer focus:outline-none appearance-none pr-5 py-0.5"
@@ -115,10 +123,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {preset.name} ({preset.id})
                 </option>
               ))}
-
-              <option value="custom" className="bg-slate-900 text-cyan-400 font-bold">
-                + Add Custom URI...
-              </option>
             </select>
           </div>
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none -ml-4" />
@@ -145,16 +149,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isTesting ? 'Connecting...' : isConnected ? 'Online' : 'Offline'}
           </span>
         </div>
-
-        {/* Custom URI Button */}
-        <button
-          onClick={onOpenCustomModal}
-          className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/60 transition-all text-xs font-semibold"
-          title="Connect to custom database URL"
-        >
-          <Plus className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="hidden md:inline">Connection</span>
-        </button>
 
         {/* Refresh button */}
         <button

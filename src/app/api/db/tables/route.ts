@@ -7,8 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const preset = searchParams.get('preset');
-    const customUrl = searchParams.get('url');
-    const connectionString = resolveConnectionString(customUrl || preset);
+    const connectionString = resolveConnectionString(preset);
 
     const tablesQuery = `
       SELECT 

@@ -6,7 +6,7 @@ import { runQuery, resolveConnectionString } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const connectionString = resolveConnectionString(body.connectionUrl || body.preset);
+    const connectionString = resolveConnectionString(body.preset);
 
     const res = await runQuery(
       connectionString,

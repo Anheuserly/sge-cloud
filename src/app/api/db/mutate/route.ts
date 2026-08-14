@@ -6,13 +6,13 @@ import { runQuery, resolveConnectionString } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, schema = 'public', table, data, where, preset, url } = body;
+    const { action, schema = 'public', table, data, where, preset } = body;
 
     if (!table || !action) {
       return NextResponse.json({ success: false, error: 'Table and action are required' }, { status: 400 });
     }
 
-    const connectionString = resolveConnectionString(url || preset);
+    const connectionString = resolveConnectionString(preset);
     const safeTable = `"${schema}"."${table}"`;
 
     if (action === 'INSERT') {

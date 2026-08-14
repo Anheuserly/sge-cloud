@@ -14,13 +14,12 @@ export async function GET(req: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') === 'desc' ? 'DESC' : 'ASC';
     const search = searchParams.get('search');
     const preset = searchParams.get('preset');
-    const customUrl = searchParams.get('url');
 
     if (!table) {
       return NextResponse.json({ success: false, error: 'Table name is required' }, { status: 400 });
     }
 
-    const connectionString = resolveConnectionString(customUrl || preset);
+    const connectionString = resolveConnectionString(preset);
     const safeTable = `"${schema}"."${table}"`;
 
     // 1. Get primary key or first column for default sorting

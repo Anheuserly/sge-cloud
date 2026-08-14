@@ -25,14 +25,12 @@ import {
 interface TableDataViewProps {
   table: TableInfo;
   preset: string;
-  customUrl: string;
   onShowToast: (title: string, type: 'success' | 'error' | 'info') => void;
 }
 
 export const TableDataView: React.FC<TableDataViewProps> = ({
   table,
   preset,
-  customUrl,
   onShowToast,
 }) => {
   const [activeTab, setActiveTab] = useState<'data' | 'schema'>('data');
@@ -68,9 +66,8 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
       const queryParams = new URLSearchParams({
         table: table.table_name,
         schema: table.table_schema,
+        preset,
       });
-      if (customUrl) queryParams.set('url', customUrl);
-      else queryParams.set('preset', preset);
 
       const res = await fetch(`/api/db/schema?${queryParams.toString()}`);
       const json = await res.json();
@@ -94,10 +91,8 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
         schema: table.table_schema,
         page: String(pagination.page),
         limit: String(pagination.limit),
+        preset,
       });
-
-      if (customUrl) queryParams.set('url', customUrl);
-      else queryParams.set('preset', preset);
 
       if (search) queryParams.set('search', search);
       if (sortBy) {
@@ -125,7 +120,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
   useEffect(() => {
     fetchSchema();
     fetchData();
-  }, [table, preset, customUrl, pagination.page, pagination.limit, sortBy, sortOrder]);
+  }, [table, preset, pagination.page, pagination.limit, sortBy, sortOrder]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,11 +145,9 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
         action: modalMode === 'create' ? 'INSERT' : 'UPDATE',
         table: table.table_name,
         schema: table.table_schema,
+        preset,
         data,
       };
-
-      if (customUrl) payload.url = customUrl;
-      else payload.preset = preset;
 
       if (modalMode === 'edit') {
         if (!primaryKey && !selectedRow) {
@@ -199,11 +192,9 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
         action: 'DELETE',
         table: table.table_name,
         schema: table.table_schema,
+        preset,
         where: { [whereKey]: rowToDelete[whereKey] },
       };
-
-      if (customUrl) payload.url = customUrl;
-      else payload.preset = preset;
 
       const res = await fetch('/api/db/mutate', {
         method: 'POST',

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ========================================================================================
 #             AUTOMATED LOCAL-TO-VPS DEPLOYMENT & SYNC SCRIPT
-#             Target Node: Netcup AVA (v2202501191704311155.ultrasrv.de)
+#             Target Node: configured by local environment variables
 # ========================================================================================
 
-VPS_HOST="v2202501191704311155.ultrasrv.de"
-VPS_USER="root"
-VPS_PATH="/opt/sge-datahub/current"
+: "${VPS_HOST:?Set VPS_HOST locally before running this script}"
+: "${VPS_USER:?Set VPS_USER locally before running this script}"
+: "${VPS_PATH:=/opt/sge-datahub/current}"
 
 echo "================================================================="
 echo "   STARTING LOCAL TO NETCUP VPS SYNC & DEPLOYMENT"
@@ -28,5 +28,5 @@ echo "[3/3] Checking live API health status..."
 curl -sI https://storage.amcmep.in
 
 echo -e "\n================================================ metaphysics =="
-echo "   ✅ SYNC AND DEPLOYMENT TO NETCUP VPS COMPLETED!"
+echo "   SYNC AND DEPLOYMENT TO NETCUP VPS COMPLETED!"
 echo "================================================================="

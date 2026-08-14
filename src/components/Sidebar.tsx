@@ -11,14 +11,17 @@ import {
   Layers,
   ChevronRight,
   DatabaseZap,
+  ShieldCheck,
 } from 'lucide-react';
+
+type ActiveView = 'overview' | 'table' | 'sql' | 'platform';
 
 interface SidebarProps {
   tables: TableInfo[];
   selectedTable: TableInfo | null;
   onSelectTable: (table: TableInfo) => void;
-  activeView: 'overview' | 'table' | 'sql';
-  setActiveView: (view: 'overview' | 'table' | 'sql') => void;
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => void;
   isLoading: boolean;
   currentDatabaseName?: string;
   isConnected: boolean;
@@ -80,6 +83,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center space-x-2.5">
             <Terminal className="w-4 h-4 text-purple-400" />
             <span>SQL Workspace</span>
+          </div>
+          <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+        </button>
+
+        <button
+          onClick={() => setActiveView('platform')}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+            activeView === 'platform'
+              ? 'bg-gradient-to-r from-emerald-950 to-cyan-950 text-emerald-300 border border-emerald-800/60 shadow-lg shadow-emerald-950/40'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+          }`}
+        >
+          <div className="flex items-center space-x-2.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-300" />
+            <span>Platform Access</span>
           </div>
           <ChevronRight className="w-3.5 h-3.5 opacity-60" />
         </button>
