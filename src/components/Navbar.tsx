@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Database, Server, RefreshCw, CheckCircle2, AlertCircle, Plus, Terminal, ChevronDown } from 'lucide-react';
-import { DATABASE_PRESETS } from '@/lib/constants';
+import { DatabasePreset } from '@/types/database';
 
 interface NavbarProps {
   currentPreset: string;
@@ -15,6 +15,7 @@ interface NavbarProps {
   activeView: 'overview' | 'table' | 'sql';
   setActiveView: (view: 'overview' | 'table' | 'sql') => void;
   dbName?: string;
+  databasePresets: Pick<DatabasePreset, 'id' | 'name'>[];
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,7 +29,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeView,
   setActiveView,
   dbName,
+  databasePresets,
 }) => {
+  const selectorValue = customUrl ? 'custom' : currentPreset || '';
+
   return (
     <header className="h-16 border-b border-slate-800/80 glass-panel sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
       {/* Brand & Title */}
@@ -88,17 +92,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               Active Database
             </span>
             <select
-              value={currentPreset}
+              value={selectorValue}
               onChange={(e) => {
                 if (e.target.value === 'custom') {
                   onOpenCustomModal();
-                } else {
+                } else if (e.target.value) {
                   onSelectPreset(e.target.value);
+                } else {
+                  onOpenCustomModal();
                 }
               }}
               className="bg-transparent text-xs font-bold text-slate-100 cursor-pointer focus:outline-none appearance-none pr-5 py-0.5"
             >
-              {DATABASE_PRESETS.map((preset) => (
+              {databasePresets.length === 0 && (
+                <option value="" className="bg-slate-900 text-amber-300 font-semibold">
+                  No real database configured
+                </option>
+              )}
+
+              {databasePresets.map((preset) => (
                 <option key={preset.id} value={preset.id} className="bg-slate-900 text-slate-100 font-semibold">
                   {preset.name} ({preset.id})
                 </option>

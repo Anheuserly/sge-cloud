@@ -8,11 +8,13 @@ import { TableDataView } from '@/components/TableDataView';
 import { SqlQueryView } from '@/components/SqlQueryView';
 import { CustomConnectionModal } from '@/components/CustomConnectionModal';
 import { Toast } from '@/components/Toast';
-import { TableInfo, DatabaseOverview, ToastMessage } from '@/types/database';
+import { TableInfo, DatabaseOverview, ToastMessage, DatabasePreset } from '@/types/database';
 import { DATABASE_PRESETS } from '@/lib/constants';
 
+type ConfiguredPreset = Pick<DatabasePreset, 'id' | 'name' | 'description' | 'badge' | 'color'>;
+
 export default function Home() {
-  const [currentPreset, setCurrentPreset] = useState<string>('amcmep');
+  const [currentPreset, setCurrentPreset] = useState<string>('');
   const [customUrl, setCustomUrl] = useState<string>('');
   const [activeView, setActiveView] = useState<'overview' | 'table' | 'sql'>('overview');
 
@@ -25,6 +27,8 @@ export default function Home() {
   const [isTesting, setIsTesting] = useState(true);
   const [isLoadingTables, setIsLoadingTables] = useState(true);
   const [connectionError, setConnectionError] = useState<string>('');
+  const [configuredPresets, setConfiguredPresets] = useState<ConfiguredPreset[]>([]);
+  const [isConfigLoading, setIsConfigLoading] = useState(true);
 
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -43,14 +47,25 @@ export default function Home() {
 
   // Test Database Connection
   const testConnection = async (presetId?: string, urlOverride?: string): Promise<boolean> => {
+    const activePreset = presetId || (urlOverride ? undefined : currentPreset);
+    const activeUrl = urlOverride || (presetId ? undefined : customUrl);
+
+    if (!activeUrl && !activePreset) {
+      const message = 'No real database is configured in Cloudflare. Add a custom PostgreSQL URI or set AMCMEP_DATABASE_URL / DATABASE_URL.';
+      setIsConnected(false);
+      setConnectionError(message);
+      setIsTesting(false);
+      return false;
+    }
+
     setIsTesting(true);
     try {
       const res = await fetch('/api/db/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          preset: presetId || (urlOverride ? undefined : currentPreset),
-          connectionUrl: urlOverride || (presetId ? undefined : customUrl),
+          preset: activePreset,
+          connectionUrl: activeUrl,
         }),
       });
 
@@ -83,10 +98,24 @@ export default function Home() {
     const activePreset = presetId || currentPreset;
     const activeUrl = urlOverride !== undefined ? urlOverride : customUrl;
 
+    if (!activeUrl && !activePreset) {
+      setTables([]);
+      setSelectedTable(null);
+      setOverview(null);
+      setTopTables([]);
+      setIsConnected(false);
+      setIsTesting(false);
+      setIsLoadingTables(false);
+      setConnectionError('No real database is configured in Cloudflare. Add a custom PostgreSQL URI or set AMCMEP_DATABASE_URL / DATABASE_URL.');
+      return;
+    }
+
     const connected = await testConnection(activePreset, activeUrl);
     if (!connected) {
       setTables([]);
+      setSelectedTable(null);
       setOverview(null);
+      setTopTables([]);
       setIsLoadingTables(false);
       return;
     }
@@ -124,8 +153,31 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const loadConfig = async () => {
+      setIsConfigLoading(true);
+      try {
+        const res = await fetch('/api/db/config');
+        const json = await res.json();
+        const presets = json.success ? json.presets || [] : [];
+        setConfiguredPresets(presets);
+        setCurrentPreset((current) => current || presets[0]?.id || '');
+        if (presets.length === 0) {
+          setConnectionError('No real database is configured in Cloudflare. Add a custom PostgreSQL URI or set AMCMEP_DATABASE_URL / DATABASE_URL.');
+        }
+      } catch (e: any) {
+        setConnectionError(e.message || 'Failed to load database configuration');
+      } finally {
+        setIsConfigLoading(false);
+      }
+    };
+
+    loadConfig();
+  }, []);
+
+  useEffect(() => {
+    if (isConfigLoading) return;
     loadDatabase();
-  }, [currentPreset, customUrl]);
+  }, [currentPreset, customUrl, isConfigLoading]);
 
   const handleSelectPreset = (presetId: string) => {
     setCurrentPreset(presetId);
@@ -158,13 +210,14 @@ export default function Home() {
         currentPreset={currentPreset}
         customUrl={customUrl}
         isConnected={isConnected}
-        isTesting={isTesting}
+        isTesting={isTesting || isConfigLoading}
         onSelectPreset={handleSelectPreset}
         onOpenCustomModal={() => setIsCustomModalOpen(true)}
         onRefresh={() => loadDatabase()}
         activeView={activeView}
         setActiveView={setActiveView}
         dbName={overview?.databaseName}
+        databasePresets={configuredPresets}
       />
 
       {/* Main Workspace Layout */}

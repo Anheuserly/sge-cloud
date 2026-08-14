@@ -27,6 +27,16 @@ export const DATABASE_PRESETS: DatabasePreset[] = [
   },
 ];
 
+export function isUsableConnectionString(url?: string): url is string {
+  return Boolean(url && !/change-me|localhost|127\.0\.0\.1/i.test(url));
+}
+
+export function getConfiguredDatabasePresets(): DatabasePreset[] {
+  return DATABASE_PRESETS.filter((preset) =>
+    preset.envVars.some((envVar) => isUsableConnectionString(process.env[envVar]))
+  );
+}
+
 export function resolveConnectionString(presetOrUrl?: string | null): string {
   const target = presetOrUrl || DATABASE_PRESETS[0].id;
   const preset = DATABASE_PRESETS.find((p) => p.id === target);
@@ -39,8 +49,8 @@ export function resolveConnectionString(presetOrUrl?: string | null): string {
     throw new Error(`Unknown database target "${target}". Select a configured database preset or provide a PostgreSQL connection URL.`);
   }
 
-  const url = preset.envVars.map((envVar) => process.env[envVar]).find(Boolean);
-  if (!url || /change-me|localhost|127\.0\.0\.1/i.test(url)) {
+  const url = preset.envVars.map((envVar) => process.env[envVar]).find(isUsableConnectionString);
+  if (!url) {
     throw new Error(`Database preset "${preset.name}" is not configured. Set one of these Cloudflare secrets to the real VPS PostgreSQL URL: ${preset.envVars.join(', ')}.`);
   }
 
