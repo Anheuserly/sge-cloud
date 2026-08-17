@@ -45,21 +45,10 @@ function normalizeIndianPhone(raw?: string | null) {
   const digits = trimmed.replace(/\D/g, '');
   if (!digits) return null;
 
-  if (hasPlus && digits.length >= 10 && digits.length <= 15) {
-    return `+${digits}`;
-  }
-
-  if (digits.length === 10) {
-    return `+91${digits}`;
-  }
-
-  if (digits.length === 11 && digits.startsWith('0')) {
-    return `+91${digits.slice(1)}`;
-  }
-
-  if (digits.length >= 12 && digits.length <= 15 && digits.startsWith('91')) {
-    return `+${digits}`;
-  }
+  if (hasPlus && digits.length >= 10 && digits.length <= 15) return `+${digits}`;
+  if (digits.length === 10) return `+91${digits}`;
+  if (digits.length === 11 && digits.startsWith('0')) return `+91${digits.slice(1)}`;
+  if (digits.length >= 12 && digits.length <= 15 && digits.startsWith('91')) return `+${digits}`;
 
   return null;
 }
@@ -73,6 +62,11 @@ function maskPhone(phone?: string | null) {
 
 function phoneOwnerKey(userId?: string | null) {
   return userId || '__missing_user_id__';
+}
+
+function metadataCountryCode(metadata: any) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  return typeof metadata.country_code === 'string' ? metadata.country_code : null;
 }
 
 async function tableColumns(client: any, tableName: string) {
@@ -92,19 +86,12 @@ function hasPhoneProblem(phone?: string | null) {
   return normalizeIndianPhone(phone) !== phone.trim();
 }
 
-function metadataCountryCode(metadata: any) {
-  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
-  return typeof metadata.country_code === 'string' ? metadata.country_code : null;
-}
-
-async function authorizeMaintenance(req: NextRequest) {
+async function authorizeMaintenance(req: NextRequest, database: string) {
   const configuredKey = process.env.PHONE_MAINTENANCE_KEY;
   const suppliedKey = req.headers.get('x-sge-maintenance-key');
-  if (configuredKey && suppliedKey && suppliedKey === configuredKey) {
-    return { ok: true };
-  }
+  if (configuredKey && suppliedKey && suppliedKey === configuredKey) return { ok: true };
 
-  const platformAuth = await validatePlatformKey(req, 'amcmep.admin');
+  const platformAuth = await validatePlatformKey(req, `${database}.admin`);
   if (platformAuth.ok) return { ok: true };
 
   return {
@@ -114,8 +101,8 @@ async function authorizeMaintenance(req: NextRequest) {
   };
 }
 
-async function normalizePhones(input: { dryRun: boolean; limit: number }) {
-  const pool = createPool(resolveConnectionString('amcmep'));
+async function normalizePhones(input: { dryRun: boolean; limit: number; database: string }) {
+  const pool = createPool(resolveConnectionString(input.database));
   const client = await pool.connect();
 
   const summary = {
@@ -157,6 +144,7 @@ async function normalizePhones(input: { dryRun: boolean; limit: number }) {
       `,
       [input.limit]
     );
+
     const authPhonesRes = await client.query<{ user_id: string | null; phone: string | null }>(
       `
         SELECT user_id, phone
@@ -164,43 +152,31 @@ async function normalizePhones(input: { dryRun: boolean; limit: number }) {
         WHERE NULLIF(BTRIM(COALESCE(phone, '')), '') IS NOT NULL;
       `
     );
-    const authOwnersByPhone = new Map<string, Set<string>>();
+    const plannedAuthOwnersByPhone = new Map<string, Set<string>>();
     for (const account of authPhonesRes.rows) {
       const normalized = normalizeIndianPhone(account.phone);
       if (!normalized) continue;
-      const owners = authOwnersByPhone.get(normalized) || new Set<string>();
+      const owners = plannedAuthOwnersByPhone.get(normalized) || new Set<string>();
       owners.add(phoneOwnerKey(account.user_id));
-      authOwnersByPhone.set(normalized, owners);
+      plannedAuthOwnersByPhone.set(normalized, owners);
     }
-    const plannedAuthOwnersByPhone = new Map(
-      [...authOwnersByPhone.entries()].map(([phone, owners]) => [phone, new Set(owners)])
-    );
 
     summary.scanned = candidatesRes.rows.length;
-
-    if (!input.dryRun) {
-      await client.query('BEGIN');
-    }
+    if (!input.dryRun) await client.query('BEGIN');
 
     for (const row of candidatesRes.rows) {
       const profileNormalized = normalizeIndianPhone(row.profile_phone);
       const authNormalized = normalizeIndianPhone(row.auth_phone);
 
       if (!profileNormalized && !authNormalized) {
-        if (hasPhoneProblem(row.profile_phone) || hasPhoneProblem(row.auth_phone)) {
-          summary.skippedUnparseable += 1;
-        }
+        if (hasPhoneProblem(row.profile_phone) || hasPhoneProblem(row.auth_phone)) summary.skippedUnparseable += 1;
         continue;
       }
 
       if (profileNormalized && authNormalized && profileNormalized !== authNormalized) {
         summary.skippedConflicts += 1;
         if (summary.conflicts.length < 20) {
-          summary.conflicts.push({
-            userId: row.user_id,
-            profile: maskPhone(row.profile_phone),
-            auth: maskPhone(row.auth_phone),
-          });
+          summary.conflicts.push({ userId: row.user_id, profile: maskPhone(row.profile_phone), auth: maskPhone(row.auth_phone) });
         }
         continue;
       }
@@ -213,11 +189,7 @@ async function normalizePhones(input: { dryRun: boolean; limit: number }) {
       if (conflictingAuthOwners.length > 0) {
         summary.skippedConflicts += 1;
         if (summary.conflicts.length < 20) {
-          summary.conflicts.push({
-            userId: row.user_id,
-            profile: maskPhone(row.profile_phone),
-            auth: maskPhone(row.auth_phone),
-          });
+          summary.conflicts.push({ userId: row.user_id, profile: maskPhone(row.profile_phone), auth: maskPhone(row.auth_phone) });
         }
         continue;
       }
@@ -228,14 +200,11 @@ async function normalizePhones(input: { dryRun: boolean; limit: number }) {
       if (authNeedsUpdate && !row.auth_user_id) {
         summary.skippedConflicts += 1;
         if (summary.conflicts.length < 20) {
-          summary.conflicts.push({
-            userId: row.user_id,
-            profile: maskPhone(row.profile_phone),
-            auth: null,
-          });
+          summary.conflicts.push({ userId: row.user_id, profile: maskPhone(row.profile_phone), auth: null });
         }
         continue;
       }
+
       const metadataNeedsUpdate =
         profileColumns.has('metadata') &&
         normalized.startsWith('+91') &&
@@ -245,14 +214,8 @@ async function normalizePhones(input: { dryRun: boolean; limit: number }) {
 
       if (profileNeedsUpdate) actions.push('user_profiles.phone');
       if (authNeedsUpdate) actions.push('auth_accounts.phone');
-
-      if (metadataNeedsUpdate) {
-        actions.push('user_profiles.metadata.country_code');
-      }
-
-      if (countryCodeNeedsUpdate) {
-        actions.push('user_profiles.country_code');
-      }
+      if (metadataNeedsUpdate) actions.push('user_profiles.metadata.country_code');
+      if (countryCodeNeedsUpdate) actions.push('user_profiles.country_code');
 
       if (actions.length === 0) continue;
       summary.plannedChanges += actions.length;
@@ -277,44 +240,43 @@ async function normalizePhones(input: { dryRun: boolean; limit: number }) {
 
       if (profileNeedsUpdate) {
         const updateParts = ['phone = $1'];
-        const params: any[] = [normalized, row.user_id];
         if (profileColumns.has('updated_at')) updateParts.push('updated_at = now()');
-        await client.query(`UPDATE user_profiles SET ${updateParts.join(', ')} WHERE user_id = $2;`, params);
-        summary.appliedChanges += 1;
+        const updateRes = await client.query(`UPDATE user_profiles SET ${updateParts.join(', ')} WHERE user_id = $2;`, [
+          normalized,
+          row.user_id,
+        ]);
+        summary.appliedChanges += updateRes.rowCount || 0;
       }
 
       if (authNeedsUpdate) {
         const updateParts = ['phone = $1'];
-        const params: any[] = [normalized, row.user_id];
         if (authColumns.has('updated_at')) updateParts.push('updated_at = now()');
-        const updateRes = await client.query(`UPDATE auth_accounts SET ${updateParts.join(', ')} WHERE user_id = $2;`, params);
+        const updateRes = await client.query(`UPDATE auth_accounts SET ${updateParts.join(', ')} WHERE user_id = $2;`, [
+          normalized,
+          row.user_id,
+        ]);
         summary.appliedChanges += updateRes.rowCount || 0;
       }
 
       if (metadataNeedsUpdate) {
         const updateParts = ["metadata = COALESCE(metadata, '{}'::jsonb) || '{\"country_code\":\"+91\"}'::jsonb"];
         if (profileColumns.has('updated_at')) updateParts.push('updated_at = now()');
-        await client.query(`UPDATE user_profiles SET ${updateParts.join(', ')} WHERE user_id = $1;`, [row.user_id]);
-        summary.appliedChanges += 1;
+        const updateRes = await client.query(`UPDATE user_profiles SET ${updateParts.join(', ')} WHERE user_id = $1;`, [row.user_id]);
+        summary.appliedChanges += updateRes.rowCount || 0;
       }
 
       if (countryCodeNeedsUpdate) {
         const updateParts = ["country_code = '+91'"];
         if (profileColumns.has('updated_at')) updateParts.push('updated_at = now()');
-        await client.query(`UPDATE user_profiles SET ${updateParts.join(', ')} WHERE user_id = $1;`, [row.user_id]);
-        summary.appliedChanges += 1;
+        const updateRes = await client.query(`UPDATE user_profiles SET ${updateParts.join(', ')} WHERE user_id = $1;`, [row.user_id]);
+        summary.appliedChanges += updateRes.rowCount || 0;
       }
     }
 
-    if (!input.dryRun) {
-      await client.query('COMMIT');
-    }
-
+    if (!input.dryRun) await client.query('COMMIT');
     return summary;
   } catch (error) {
-    if (!input.dryRun) {
-      await client.query('ROLLBACK').catch(() => undefined);
-    }
+    if (!input.dryRun) await client.query('ROLLBACK').catch(() => undefined);
     throw error;
   } finally {
     client.release();
@@ -325,10 +287,8 @@ async function normalizePhones(input: { dryRun: boolean; limit: number }) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const data = await normalizePhones({
-      dryRun: true,
-      limit: parseLimit(searchParams.get('limit')),
-    });
+    const database = searchParams.get('database') || 'amcmep';
+    const data = await normalizePhones({ dryRun: true, limit: parseLimit(searchParams.get('limit')), database });
     return NextResponse.json({ success: true, ...data });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message || 'Phone audit failed.' }, { status: 500 });
@@ -339,18 +299,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const dryRun = body.dryRun !== false;
-
+    const database = body.database || 'amcmep';
     if (!dryRun) {
-      const auth = await authorizeMaintenance(req);
-      if (!auth.ok) {
-        return NextResponse.json({ success: false, error: auth.error }, { status: auth.status || 401 });
-      }
+      const auth = await authorizeMaintenance(req, database);
+      if (!auth.ok) return NextResponse.json({ success: false, error: auth.error }, { status: auth.status || 401 });
     }
 
-    const data = await normalizePhones({
-      dryRun,
-      limit: parseLimit(body.limit),
-    });
+    const data = await normalizePhones({ dryRun, limit: parseLimit(body.limit), database });
     return NextResponse.json({ success: true, ...data });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message || 'Phone normalization failed.' }, { status: 500 });
