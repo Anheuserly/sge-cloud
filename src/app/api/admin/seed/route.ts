@@ -23,7 +23,7 @@ export async function GET(request: Request) {
        VALUES ($1, $2, 'admin') 
        ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash 
        RETURNING id`,
-      ['admin@sge.amcmep.in', passwordHash]
+      ['amcmep247@gmail.com', passwordHash]
     );
     const userId = userRes.rows[0].id;
 
