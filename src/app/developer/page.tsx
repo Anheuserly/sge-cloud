@@ -7,8 +7,11 @@ import { ToastMessage } from '@/types/database';
 import { Shield, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
+import { ProjectsView } from '@/components/ProjectsView';
+
 export default function DeveloperPage() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [activeTab, setActiveTab] = useState<'projects' | 'security'>('projects');
 
   const showToast = (title: string, type: 'success' | 'error' | 'info' = 'info', description?: string) => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -31,16 +34,34 @@ export default function DeveloperPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="h-8 w-px bg-[#333]" />
-          <div className="flex items-center space-x-2 text-rose-400">
-            <Shield className="w-5 h-5" />
-            <span className="font-semibold text-sm uppercase tracking-wider">Developer & Security Settings</span>
+          <div className="flex items-center space-x-6">
+            <button
+              onClick={() => setActiveTab('projects')}
+              className={`font-semibold text-sm uppercase tracking-wider transition-colors pb-1 ${
+                activeTab === 'projects' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-neutral-500 hover:text-neutral-300'
+              }`}
+            >
+              Projects
+            </button>
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`font-semibold text-sm uppercase tracking-wider transition-colors pb-1 flex items-center gap-1.5 ${
+                activeTab === 'security' ? 'text-rose-400 border-b-2 border-rose-400' : 'text-neutral-500 hover:text-neutral-300'
+              }`}
+            >
+              <Shield className="w-4 h-4" /> Security
+            </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <PlatformAccessView onShowToast={showToast} />
+        {activeTab === 'projects' ? (
+          <ProjectsView onShowToast={showToast} />
+        ) : (
+          <PlatformAccessView onShowToast={showToast} />
+        )}
       </main>
 
       <Toast toasts={toasts} onDismiss={handleDismissToast} />
