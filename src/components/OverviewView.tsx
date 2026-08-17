@@ -297,44 +297,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         </div>
       </div>
 
-      {/* Tables Quick Access Grid */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-white">Database Tables ({tables.length})</h3>
-          <span className="text-xs text-neutral-400">Click any table to inspect schema and modify rows</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {tables.map((table) => (
-            <button
-              key={`${table.table_schema}.${table.table_name}`}
-              onClick={() => onSelectTable(table)}
-              className="bg-[#000000] border border-[#222] shadow-sm p-4 rounded-lg border border-[#222] hover:border-cyan-500/50 hover:bg-slate-800/60 transition-all text-left group flex items-start justify-between"
-            >
-              <div className="space-y-1.5 min-w-0 pr-2">
-                <div className="flex items-center space-x-2">
-                  <TableIcon className="w-4 h-4 text-neutral-300 group-hover:scale-110 transition-transform shrink-0" />
-                  <span className="text-xs font-semibold text-slate-200 group-hover:text-white truncate">
-                    {table.table_name}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 text-[11px] text-neutral-400 font-mono">
-                  <span>{table.column_count} cols</span>
-                  <span>•</span>
-                  <span>{table.total_size}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-end space-y-1 shrink-0">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-cyan-300 border border-[#333]">
-                  {table.estimated_rows.toLocaleString()} rows
-                </span>
-                <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-neutral-300 transition-colors" />
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
