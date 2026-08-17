@@ -25,7 +25,7 @@ export const TableSchemaView: React.FC<TableSchemaViewProps> = ({
         <div className="h-6 w-48 bg-slate-800 animate-pulse rounded" />
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((n) => (
-            <div key={n} className="h-12 bg-slate-800/40 animate-pulse rounded-xl" />
+            <div key={n} className="h-12 bg-slate-800/40 animate-pulse rounded-lg" />
           ))}
         </div>
       </div>
@@ -35,20 +35,20 @@ export const TableSchemaView: React.FC<TableSchemaViewProps> = ({
   return (
     <div className="p-6 space-y-6">
       {/* Column Schema Table */}
-      <div className="glass-card rounded-2xl border border-slate-800 overflow-hidden">
-        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
+      <div className="bg-[#000000] border border-[#222] shadow-sm rounded-lg border border-[#222] overflow-hidden">
+        <div className="p-4 border-b border-[#222]/80 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Layers className="w-4 h-4 text-cyan-400" />
+            <Layers className="w-4 h-4 text-neutral-300" />
             <h3 className="text-sm font-semibold text-white">Column Definitions ({columns.length})</h3>
           </div>
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-neutral-400 font-mono">
             {schemaName}.{tableName}
           </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+            <thead className="bg-slate-900/90 text-neutral-400 uppercase tracking-wider font-semibold border-b border-[#222]">
               <tr>
                 <th className="px-4 py-3">Column Name</th>
                 <th className="px-4 py-3">Data Type</th>
@@ -78,21 +78,21 @@ export const TableSchemaView: React.FC<TableSchemaViewProps> = ({
                   </td>
 
                   {/* Data Type */}
-                  <td className="px-4 py-3 text-cyan-400 font-medium">
+                  <td className="px-4 py-3 text-neutral-300 font-medium">
                     {col.dataType}
                   </td>
 
                   {/* Nullable */}
                   <td className="px-4 py-3">
                     {col.nullable ? (
-                      <span className="text-slate-400">YES</span>
+                      <span className="text-neutral-400">YES</span>
                     ) : (
                       <span className="text-rose-400 font-semibold">NO</span>
                     )}
                   </td>
 
                   {/* Default Value */}
-                  <td className="px-4 py-3 text-slate-400 truncate max-w-[200px]" title={col.defaultValue || 'None'}>
+                  <td className="px-4 py-3 text-neutral-400 truncate max-w-[200px]" title={col.defaultValue || 'None'}>
                     {col.defaultValue || <span className="text-slate-600">NULL</span>}
                   </td>
 
@@ -117,7 +117,7 @@ export const TableSchemaView: React.FC<TableSchemaViewProps> = ({
 
       {/* Table Indexes */}
       {indexes.length > 0 && (
-        <div className="glass-card rounded-2xl border border-slate-800 overflow-hidden p-4 space-y-3">
+        <div className="bg-[#000000] border border-[#222] shadow-sm rounded-lg border border-[#222] overflow-hidden p-4 space-y-3">
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <h3 className="text-sm font-semibold text-white">Database Indexes ({indexes.length})</h3>
@@ -127,10 +127,10 @@ export const TableSchemaView: React.FC<TableSchemaViewProps> = ({
             {indexes.map((idx) => (
               <div
                 key={idx.indexname}
-                className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 font-mono text-xs space-y-1"
+                className="p-3 rounded-lg bg-slate-900/80 border border-[#222] font-mono text-xs space-y-1"
               >
-                <div className="text-cyan-400 font-semibold">{idx.indexname}</div>
-                <div className="text-slate-400 text-[11px] break-all">{idx.indexdef}</div>
+                <div className="text-neutral-300 font-semibold">{idx.indexname}</div>
+                <div className="text-neutral-400 text-[11px] break-all">{idx.indexdef}</div>
               </div>
             ))}
           </div>

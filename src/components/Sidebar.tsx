@@ -14,7 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
-type ActiveView = 'overview' | 'table' | 'sql' | 'platform';
+type ActiveView = 'overview' | 'table' | 'sql';
 
 interface SidebarProps {
   tables: TableInfo[];
@@ -50,23 +50,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   });
 
   return (
-    <aside className="w-64 md:w-72 bg-slate-900/95 border-r border-slate-800 flex flex-col h-[calc(100vh-4rem)] sticky top-16 shrink-0 glass-panel">
+    <aside className="w-64 md:w-72 bg-slate-900/95 border-r border-[#222] flex flex-col h-[calc(100vh-4rem)] sticky top-16 shrink-0 glass-panel">
       {/* Primary Workspace Navigation */}
-      <div className="p-3 border-b border-slate-800/80 space-y-1">
-        <span className="px-2 text-[10px] uppercase font-bold tracking-wider text-slate-500">
+      <div className="p-3 border-b border-[#222]/80 space-y-1">
+        <span className="px-2 text-[10px] uppercase font-bold tracking-wider text-neutral-500">
           WORKSPACE
         </span>
 
         <button
           onClick={() => setActiveView('overview')}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
             activeView === 'overview'
-              ? 'bg-gradient-to-r from-cyan-950 to-blue-950 text-cyan-400 border border-cyan-800/60 shadow-lg shadow-cyan-950/40'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              ? 'bg-gradient-to-r from-cyan-950 to-blue-950 text-neutral-300 border border-cyan-800/60 shadow-lg shadow-cyan-950/40'
+              : 'text-neutral-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           <div className="flex items-center space-x-2.5">
-            <Server className="w-4 h-4 text-cyan-400" />
+            <Server className="w-4 h-4 text-neutral-300" />
             <span>Overview</span>
           </div>
           <ChevronRight className="w-3.5 h-3.5 opacity-60" />
@@ -74,10 +74,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={() => setActiveView('sql')}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
             activeView === 'sql'
               ? 'bg-gradient-to-r from-purple-950 to-indigo-950 text-purple-400 border border-purple-800/60 shadow-lg shadow-purple-950/40'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              : 'text-neutral-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           <div className="flex items-center space-x-2.5">
@@ -89,10 +89,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={() => setActiveView('platform')}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
             activeView === 'platform'
               ? 'bg-gradient-to-r from-emerald-950 to-cyan-950 text-emerald-300 border border-emerald-800/60 shadow-lg shadow-emerald-950/40'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              : 'text-neutral-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           <div className="flex items-center space-x-2.5">
@@ -104,17 +104,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Tables Section Header */}
-      <div className="p-3 border-b border-slate-800/80 space-y-2">
-        <div className="flex items-center justify-between text-xs font-medium text-slate-400">
-          <span className="flex items-center space-x-1.5 uppercase text-[10px] font-bold tracking-wider text-slate-400">
-            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+      <div className="p-3 border-b border-[#222]/80 space-y-2">
+        <div className="flex items-center justify-between text-xs font-medium text-neutral-400">
+          <span className="flex items-center space-x-1.5 uppercase text-[10px] font-bold tracking-wider text-neutral-400">
+            <Layers className="w-3.5 h-3.5 text-neutral-300" />
             <span>Tables ({filteredTables.length})</span>
           </span>
           {schemas.length > 1 && (
             <select
               value={selectedSchema}
               onChange={(e) => setSelectedSchema(e.target.value)}
-              className="bg-slate-800 text-[10px] text-slate-300 px-1.5 py-0.5 rounded border border-slate-700 focus:outline-none"
+              className="bg-slate-800 text-[10px] text-neutral-300 px-1.5 py-0.5 rounded border border-[#333] focus:outline-none"
             >
               <option value="all">All Schemas</option>
               {schemas.map((s) => (
@@ -128,13 +128,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Search Bar */}
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
           <input
             type="text"
             placeholder="Filter tables..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full glass-input pl-8 pr-3 py-1.5 rounded-lg text-xs placeholder:text-slate-500 focus:ring-1 focus:ring-cyan-500"
+            className="w-full glass-input pl-8 pr-3 py-1.5 rounded-lg text-xs placeholder:text-neutral-500 focus:ring-1 focus:ring-cyan-500"
           />
         </div>
       </div>
@@ -148,8 +148,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ))}
           </div>
         ) : filteredTables.length === 0 ? (
-          <div className="p-6 text-center text-xs text-slate-500 space-y-2">
-            <DatabaseZap className="w-8 h-8 mx-auto opacity-30 text-slate-400" />
+          <div className="p-6 text-center text-xs text-neutral-500 space-y-2">
+            <DatabaseZap className="w-8 h-8 mx-auto opacity-30 text-neutral-400" />
             <p>{isConnected ? 'No tables found matching query.' : 'Connect to a real PostgreSQL database to load tables.'}</p>
           </div>
         ) : (
@@ -166,23 +166,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTable(table);
                   setActiveView('table');
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all text-left group ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left group ${
                   isSelected
                     ? 'bg-slate-800 text-white font-medium border border-cyan-500/40 shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800/40 hover:text-white'
+                    : 'text-neutral-300 hover:bg-slate-800/40 hover:text-white'
                 }`}
               >
                 <div className="flex items-center space-x-2.5 truncate min-w-0 pr-1">
                   <Table
                     className={`w-4 h-4 shrink-0 transition-colors ${
-                      isSelected ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'
+                      isSelected ? 'text-neutral-300' : 'text-neutral-500 group-hover:text-neutral-300'
                     }`}
                   />
                   <span className="truncate">{table.table_name}</span>
                 </div>
 
                 <div className="flex items-center space-x-1.5 shrink-0">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-800/90 text-slate-400 border border-slate-700/60 font-mono">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-800/90 text-neutral-400 border border-[#333]/60 font-mono">
                     {table.estimated_rows > 999
                       ? `${(table.estimated_rows / 1000).toFixed(1)}k`
                       : table.estimated_rows}
@@ -195,10 +195,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer Info */}
-      <div className="p-3 border-t border-slate-800/80 text-[11px] text-slate-500 flex items-center justify-between">
+      <div className="p-3 border-t border-[#222]/80 text-[11px] text-neutral-500 flex items-center justify-between">
         <div className="flex items-center space-x-1.5">
-          <Database className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="truncate max-w-[140px] font-mono text-slate-300">
+          <Database className="w-3.5 h-3.5 text-neutral-300" />
+          <span className="truncate max-w-[140px] font-mono text-neutral-300">
             {isConnected ? currentDatabaseName || 'PostgreSQL' : 'No database'}
           </span>
         </div>

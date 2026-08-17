@@ -7,6 +7,7 @@ import { OverviewView } from '@/components/OverviewView';
 import { TableDataView } from '@/components/TableDataView';
 import { SqlQueryView } from '@/components/SqlQueryView';
 import { PlatformAccessView } from '@/components/PlatformAccessView';
+import { CreateTableModal } from '@/components/CreateTableModal';
 import { Toast } from '@/components/Toast';
 import { TableInfo, DatabaseOverview, ToastMessage, DatabasePreset } from '@/types/database';
 import { DATABASE_PRESETS } from '@/lib/constants';
@@ -17,6 +18,8 @@ type ActiveView = 'overview' | 'table' | 'sql' | 'platform';
 export default function Home() {
   const [currentPreset, setCurrentPreset] = useState<string>('');
   const [activeView, setActiveView] = useState<ActiveView>('overview');
+  const [isCreateTableOpen, setIsCreateTableOpen] = useState(false);
+  const [user, setUser] = useState<{ email: string; role: string } | null>(null);
 
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [selectedTable, setSelectedTable] = useState<TableInfo | null>(null);
@@ -156,6 +159,9 @@ export default function Home() {
         const presets = json.success ? json.presets || [] : [];
         setConfiguredPresets(presets);
         setCurrentPreset((current) => current || presets[0]?.id || '');
+        if (json.user) {
+          setUser(json.user);
+        }
         if (presets.length === 0) {
           setConnectionError('No real database is configured in Cloudflare. Set the database URL secrets in the Worker environment.');
         }
@@ -197,6 +203,7 @@ export default function Home() {
         setActiveView={setActiveView}
         dbName={overview?.databaseName}
         databasePresets={configuredPresets}
+        user={user}
       />
 
       {/* Main Workspace Layout */}
@@ -232,9 +239,9 @@ export default function Home() {
               presetName={presetName}
               connectionError={connectionError}
               onRefresh={() => loadDatabase()}
+              onRefresh={() => loadDatabase()}
+              onOpenCreateTable={() => setIsCreateTableOpen(true)}
             />
-          ) : activeView === 'platform' ? (
-            <PlatformAccessView onShowToast={showToast} />
           ) : activeView === 'table' && selectedTable ? (
             <TableDataView
               table={selectedTable}
@@ -253,6 +260,14 @@ export default function Home() {
 
       {/* Toast Notification Container */}
       <Toast toasts={toasts} onDismiss={handleDismissToast} />
+      
+      <CreateTableModal
+        presetId={currentPreset}
+        isOpen={isCreateTableOpen}
+        onClose={() => setIsCreateTableOpen(false)}
+        onTableCreated={() => loadDatabase(currentPreset)}
+        onShowToast={showToast}
+      />
     </div>
   );
 }

@@ -34,7 +34,7 @@ export const PLATFORM_SCOPES = [
 
 const CONTROL_DB_PRESET = 'sge_datahub';
 
-function controlConnectionString() {
+export function controlConnectionString() {
   return resolveConnectionString(CONTROL_DB_PRESET);
 }
 
@@ -81,14 +81,43 @@ export async function ensurePlatformSchema() {
     `
       CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+      CREATE TABLE IF NOT EXISTS platform_users (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        email text NOT NULL UNIQUE,
+        password_hash text NOT NULL,
+        role text NOT NULL DEFAULT 'developer',
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+
       CREATE TABLE IF NOT EXISTS platform_projects (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         project_key text NOT NULL UNIQUE,
         name text NOT NULL,
-        database_key text NOT NULL,
         status text NOT NULL DEFAULT 'active',
         created_at timestamptz NOT NULL DEFAULT now(),
         updated_at timestamptz NOT NULL DEFAULT now()
+      );
+
+      CREATE TABLE IF NOT EXISTS platform_project_users (
+        user_id uuid NOT NULL REFERENCES platform_users(id) ON DELETE CASCADE,
+        project_id uuid NOT NULL REFERENCES platform_projects(id) ON DELETE CASCADE,
+        role text NOT NULL DEFAULT 'member',
+        created_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (user_id, project_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS platform_databases (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id uuid NOT NULL REFERENCES platform_projects(id) ON DELETE CASCADE,
+        database_key text NOT NULL UNIQUE,
+        name text NOT NULL,
+        env_var_key text NOT NULL,
+        badge text,
+        color text,
+        description text,
+        status text NOT NULL DEFAULT 'active',
+        created_at timestamptz NOT NULL DEFAULT now()
       );
 
       CREATE TABLE IF NOT EXISTS platform_applications (

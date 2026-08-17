@@ -253,19 +253,19 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Table Header Bar */}
-      <div className="p-4 md:px-6 border-b border-slate-800 glass-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 md:px-6 border-b border-[#222] glass-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">
+          <div className="p-2.5 rounded-lg bg-cyan-950/80 text-neutral-300 border border-cyan-800/60">
             <TableIcon className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
               <h2 className="text-lg font-bold text-white tracking-tight">{table.table_name}</h2>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-neutral-300">
                 {table.table_schema}
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
+            <p className="text-xs text-neutral-400 font-mono mt-0.5">
               {table.estimated_rows.toLocaleString()} estimated rows • {table.total_size}
             </p>
           </div>
@@ -273,13 +273,13 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
 
         {/* Tab Switcher & Actions */}
         <div className="flex items-center space-x-3">
-          <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+          <div className="flex bg-slate-900 p-1 rounded-lg border border-[#222] text-xs">
             <button
               onClick={() => setActiveTab('data')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 activeTab === 'data'
-                  ? 'bg-slate-800 text-cyan-400 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-slate-800 text-neutral-300 shadow-sm'
+                  : 'text-neutral-400 hover:text-slate-200'
               }`}
             >
               Data View
@@ -288,8 +288,8 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
               onClick={() => setActiveTab('schema')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 activeTab === 'schema'
-                  ? 'bg-slate-800 text-cyan-400 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-slate-800 text-neutral-300 shadow-sm'
+                  : 'text-neutral-400 hover:text-slate-200'
               }`}
             >
               Structure & Schema
@@ -302,7 +302,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
               setSelectedRow(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-md shadow-cyan-500/20 transition-all"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-md shadow-cyan-500/20 transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Record</span>
@@ -323,22 +323,22 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
       ) : (
         <>
           {/* Data Filter Bar */}
-          <div className="p-3 md:px-6 border-b border-slate-800/80 bg-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="p-3 md:px-6 border-b border-[#222]/80 bg-[#0a0a0a] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             {/* Search Input */}
             <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
               <input
                 type="text"
                 placeholder="Search values in text/uuid columns..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full glass-input pl-8 pr-3 py-1.5 rounded-xl text-xs placeholder:text-slate-500"
+                className="w-full glass-input pl-8 pr-3 py-1.5 rounded-lg text-xs placeholder:text-neutral-500"
               />
             </form>
 
             {/* Controls */}
             <div className="flex items-center space-x-3 self-end sm:self-auto">
-              <div className="flex items-center space-x-1 text-slate-400">
+              <div className="flex items-center space-x-1 text-neutral-400">
                 <span>Per Page:</span>
                 <select
                   value={pagination.limit}
@@ -349,7 +349,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
                       page: 1,
                     }))
                   }
-                  className="bg-slate-800 text-slate-200 px-2 py-1 rounded-lg border border-slate-700 focus:outline-none"
+                  className="bg-slate-800 text-slate-200 px-2 py-1 rounded-lg border border-[#333] focus:outline-none"
                 >
                   <option value={10}>10</option>
                   <option value={25}>25</option>
@@ -359,43 +359,43 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
               </div>
 
               {/* Export Dropdown */}
-              <div className="flex items-center space-x-1 border-l border-slate-800 pl-3">
+              <div className="flex items-center space-x-1 border-l border-[#222] pl-3">
                 <button
                   onClick={() => handleExportData('json')}
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-neutral-300 hover:text-white transition-colors"
                   title="Export JSON"
                 >
                   <FileCode className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => handleExportData('csv')}
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-neutral-300 hover:text-white transition-colors"
                   title="Export CSV"
                 >
                   <Download className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={fetchData}
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-neutral-300 hover:text-white transition-colors"
                   title="Refresh Data"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-cyan-400' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-neutral-300' : ''}`} />
                 </button>
               </div>
             </div>
           </div>
 
           {/* Table Data Grid */}
-          <div className="flex-1 overflow-auto bg-slate-950">
+          <div className="flex-1 overflow-auto bg-[#000000]">
             {isLoading ? (
               <div className="p-6 space-y-3">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <div key={n} className="h-10 bg-slate-900/60 rounded-xl animate-pulse" />
+                  <div key={n} className="h-10 bg-[#0a0a0a] rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : rows.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 space-y-3">
-                <Layers className="w-10 h-10 mx-auto opacity-30 text-slate-400" />
+              <div className="p-12 text-center text-neutral-500 space-y-3">
+                <Layers className="w-10 h-10 mx-auto opacity-30 text-neutral-400" />
                 <p className="text-sm font-medium">No records found in this table.</p>
                 <button
                   onClick={() => {
@@ -403,7 +403,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
                     setSelectedRow(null);
                     setIsModalOpen(true);
                   }}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-neutral-300 text-xs font-medium"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Insert First Record</span>
@@ -411,20 +411,20 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
               </div>
             ) : (
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-900/90 text-slate-400 font-semibold tracking-wider uppercase sticky top-0 z-10 border-b border-slate-800 backdrop-blur-md">
+                <thead className="bg-slate-900/90 text-neutral-400 font-semibold tracking-wider uppercase sticky top-0 z-10 border-b border-[#222] backdrop-blur-md">
                   <tr>
-                    <th className="px-3 py-3 w-16 text-center border-r border-slate-800/60">Action</th>
+                    <th className="px-3 py-3 w-16 text-center border-r border-[#222]/60">Action</th>
                     {columns.map((col) => (
                       <th
                         key={col.name}
                         onClick={() => handleSort(col.name)}
-                        className="px-4 py-3 cursor-pointer hover:text-white transition-colors border-r border-slate-800/40"
+                        className="px-4 py-3 cursor-pointer hover:text-white transition-colors border-r border-[#222]/40"
                       >
                         <div className="flex items-center space-x-1.5">
                           <span>{col.name}</span>
                           {col.isPrimaryKey && <Key className="w-3 h-3 text-amber-400 shrink-0" />}
                           {sortBy === col.name && (
-                            <span className="text-cyan-400">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                            <span className="text-neutral-300">{sortOrder === 'asc' ? '▲' : '▼'}</span>
                           )}
                         </div>
                       </th>
@@ -436,7 +436,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
                   {rows.map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-900/80 transition-colors group">
                       {/* Action buttons */}
-                      <td className="px-2 py-2 text-center border-r border-slate-800/60">
+                      <td className="px-2 py-2 text-center border-r border-[#222]/60">
                         <div className="flex items-center justify-center space-x-1 opacity-80 group-hover:opacity-100">
                           <button
                             onClick={() => {
@@ -444,7 +444,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
                               setModalMode('edit');
                               setIsModalOpen(true);
                             }}
-                            className="p-1 rounded text-cyan-400 hover:bg-slate-800 transition-colors"
+                            className="p-1 rounded text-neutral-300 hover:bg-slate-800 transition-colors"
                             title="Edit row"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -469,7 +469,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
                         return (
                           <td
                             key={col.name}
-                            className="px-4 py-2.5 max-w-xs truncate border-r border-slate-800/30"
+                            className="px-4 py-2.5 max-w-xs truncate border-r border-[#222]/30"
                             title={isObject ? JSON.stringify(val) : String(val)}
                           >
                             {isNull ? (
@@ -503,7 +503,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
           </div>
 
           {/* Pagination Footer */}
-          <div className="p-3 md:px-6 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between text-xs text-slate-400">
+          <div className="p-3 md:px-6 border-t border-[#222] bg-slate-900/90 flex items-center justify-between text-xs text-neutral-400">
             <div>
               Showing {rows.length} of {pagination.totalRows.toLocaleString()} rows (Page {pagination.page} of{' '}
               {pagination.totalPages})
@@ -546,29 +546,29 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
 
       {/* Delete Confirmation Dialog */}
       {rowToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="glass-card max-w-md w-full p-6 rounded-2xl border border-rose-800/80 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000]/80 backdrop-blur-md">
+          <div className="bg-[#000000] border border-[#222] shadow-sm max-w-md w-full p-6 rounded-lg border border-rose-800/80 space-y-4 shadow-2xl">
             <div className="flex items-center space-x-3 text-rose-400">
               <AlertTriangle className="w-6 h-6 shrink-0" />
               <h3 className="text-base font-bold text-white">Delete Record Confirmation</h3>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-neutral-300 leading-relaxed">
               Are you sure you want to delete this row from{' '}
-              <strong className="text-cyan-400">{table.table_name}</strong>? This operation will permanently remove the record from PostgreSQL.
+              <strong className="text-neutral-300">{table.table_name}</strong>? This operation will permanently remove the record from PostgreSQL.
             </p>
 
             <div className="flex items-center justify-end space-x-3 pt-2">
               <button
                 onClick={() => setRowToDelete(null)}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800"
+                className="px-4 py-2 rounded-lg text-xs font-medium text-neutral-300 hover:bg-slate-800"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteRecord}
                 disabled={isMutating}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/30 flex items-center space-x-1.5"
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/30 flex items-center space-x-1.5"
               >
                 {isMutating && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 <span>Confirm Delete</span>
