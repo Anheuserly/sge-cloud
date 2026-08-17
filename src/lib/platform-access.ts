@@ -94,6 +94,7 @@ export async function ensurePlatformSchema() {
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         project_key text NOT NULL UNIQUE,
         name text NOT NULL,
+        user_id uuid REFERENCES platform_users(id) ON DELETE SET NULL,
         status text NOT NULL DEFAULT 'active',
         created_at timestamptz NOT NULL DEFAULT now(),
         updated_at timestamptz NOT NULL DEFAULT now()
@@ -103,6 +104,8 @@ export async function ensurePlatformSchema() {
         user_id uuid NOT NULL REFERENCES platform_users(id) ON DELETE CASCADE,
         project_id uuid NOT NULL REFERENCES platform_projects(id) ON DELETE CASCADE,
         role text NOT NULL DEFAULT 'member',
+        user_email text,
+        project_name text,
         created_at timestamptz NOT NULL DEFAULT now(),
         PRIMARY KEY (user_id, project_id)
       );
@@ -298,41 +301,34 @@ export async function listPlatformAccess(userId: string, role: string, activeDat
   await seedPlatformAccess();
   const connectionString = controlConnectionString();
   
-  let projectsQuery = `SELECT * FROM platform_projects ORDER BY project_key;`;
-  let appsQuery = `SELECT * FROM platform_applications ORDER BY project_key, app_key;`;
-  let databasesQuery = `SELECT * FROM platform_databases ORDER BY name;`;
-  let auditsQuery = `SELECT id, application_id, api_key_id, project_key, action, endpoint, result, ip_address, origin, created_at
-                     FROM platform_audit_logs ORDER BY created_at DESC LIMIT 60;`;
+  let projectsQuery = `
+    SELECT p.* FROM platform_projects p
+    INNER JOIN platform_project_users pu ON p.id = pu.project_id
+    WHERE pu.user_id = $1 ORDER BY p.project_key;
+  `;
+  let appsQuery = `
+    SELECT a.* FROM platform_applications a
+    INNER JOIN platform_projects p ON a.project_key = p.project_key
+    INNER JOIN platform_project_users pu ON p.id = pu.project_id
+    WHERE pu.user_id = $1 ORDER BY a.project_key, a.app_key;
+  `;
+  let databasesQuery = `
+    SELECT d.* FROM platform_databases d
+    INNER JOIN platform_projects p ON d.project_id = p.id
+    INNER JOIN platform_project_users pu ON p.id = pu.project_id
+    WHERE pu.user_id = $1 ORDER BY d.name;
+  `;
+  let auditsQuery = `
+    SELECT al.id, al.application_id, al.api_key_id, al.project_key, al.action, al.endpoint, al.result, al.ip_address, al.origin, al.created_at
+    FROM platform_audit_logs al
+    INNER JOIN platform_projects p ON al.project_key = p.project_key
+    INNER JOIN platform_project_users pu ON p.id = pu.project_id
+    WHERE pu.user_id = $1 ORDER BY al.created_at DESC LIMIT 60;
+  `;
 
-  let queryParams: any[] = [];
+  let queryParams: any[] = [userId];
 
-  if (role !== 'admin') {
-    projectsQuery = `
-      SELECT p.* FROM platform_projects p
-      INNER JOIN platform_project_users pu ON p.id = pu.project_id
-      WHERE pu.user_id = $1 ORDER BY p.project_key;
-    `;
-    appsQuery = `
-      SELECT a.* FROM platform_applications a
-      INNER JOIN platform_projects p ON a.project_key = p.project_key
-      INNER JOIN platform_project_users pu ON p.id = pu.project_id
-      WHERE pu.user_id = $1 ORDER BY a.project_key, a.app_key;
-    `;
-    databasesQuery = `
-      SELECT d.* FROM platform_databases d
-      INNER JOIN platform_projects p ON d.project_id = p.id
-      INNER JOIN platform_project_users pu ON p.id = pu.project_id
-      WHERE pu.user_id = $1 ORDER BY d.name;
-    `;
-    auditsQuery = `
-      SELECT al.id, al.application_id, al.api_key_id, al.project_key, al.action, al.endpoint, al.result, al.ip_address, al.origin, al.created_at
-      FROM platform_audit_logs al
-      INNER JOIN platform_projects p ON al.project_key = p.project_key
-      INNER JOIN platform_project_users pu ON p.id = pu.project_id
-      WHERE pu.user_id = $1 ORDER BY al.created_at DESC LIMIT 60;
-    `;
-    queryParams = [userId];
-  }
+
 
   const [projects, applications, databases, origins, identifiers, audits] = await Promise.all([
     runQuery(connectionString, projectsQuery, queryParams),
@@ -409,6 +405,7 @@ export async function listPlatformAccess(userId: string, role: string, activeDat
     })),
     auditLogs: audits.rows,
     appTypes: APP_TYPES,
+    role,
   };
 }
 

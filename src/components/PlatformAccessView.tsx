@@ -67,6 +67,7 @@ interface PlatformState {
   applications: PlatformApplication[];
   auditLogs: PlatformAuditLog[];
   appTypes: string[];
+  role: string;
 }
 
 interface PlatformAccessViewProps {
@@ -257,7 +258,7 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
           </div>
           
           <div className="flex flex-col items-end gap-3 mt-4 md:mt-0">
-            {state?.databases && state.databases.length > 0 && (
+            {state?.role !== 'admin' && state?.databases && state.databases.length > 0 && (
               <div className="flex items-center gap-2 bg-[#111] border border-[#333] px-3 py-1.5 rounded-lg">
                 <Server className="h-4 w-4 text-emerald-400" />
                 <span className="text-xs text-neutral-400 font-medium">ACTIVE DATABASE</span>
@@ -432,7 +433,7 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
           </div>
         </section>
       </div>
-
+      {/* Register App */}
       <section className="bg-[#000000] border border-[#222] shadow-sm rounded-lg border border-[#222] p-5">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
           <Smartphone className="h-4 w-4 text-neutral-300" />
