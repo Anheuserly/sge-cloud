@@ -83,6 +83,13 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
   const [selectedScopes, setSelectedScopes] = useState<string[]>(['amcmep.read']);
   const [newKey, setNewKey] = useState('');
 
+  const [newAppProjectKey, setNewAppProjectKey] = useState('');
+  const [newAppName, setNewAppName] = useState('');
+  const [newAppType, setNewAppType] = useState('Web application');
+  const [newAppOrigin, setNewAppOrigin] = useState('');
+  const [newAppBundleId, setNewAppBundleId] = useState('');
+  const [isCreatingApp, setIsCreatingApp] = useState(false);
+
   const selectedApp = useMemo(
     () => state?.applications.find((app) => app.id === selectedAppId),
     [state, selectedAppId]
@@ -161,6 +168,47 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
   const copyNewKey = async () => {
     await navigator.clipboard.writeText(newKey);
     onShowToast('Copied API key', 'success');
+  };
+
+  const createApplication = async () => {
+    if (!newAppProjectKey || !newAppName) {
+      onShowToast('Project and Application Name are required', 'error');
+      return;
+    }
+    
+    setIsCreatingApp(true);
+    try {
+      const origins = newAppOrigin.split(',').map(s => s.trim()).filter(Boolean);
+      const identifiers = newAppBundleId.split(',').map(s => {
+        const parts = s.trim().split(':');
+        return parts.length === 2 ? { platform: parts[0], identifier: parts[1] } : null;
+      }).filter(Boolean) as { platform: string, identifier: string }[];
+
+      const res = await fetch('/api/platform/access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_application',
+          projectKey: newAppProjectKey,
+          name: newAppName,
+          appType: newAppType,
+          origins,
+          identifiers,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Failed to create application.');
+      
+      onShowToast('Application created successfully', 'success');
+      setNewAppName('');
+      setNewAppOrigin('');
+      setNewAppBundleId('');
+      await loadAccess();
+    } catch (error: any) {
+      onShowToast('Application creation failed', 'error', error.message);
+    } finally {
+      setIsCreatingApp(false);
+    }
   };
 
   if (isLoading || !state) {
@@ -307,6 +355,80 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
           </div>
         </section>
       </div>
+
+      <section className="bg-[#000000] border border-[#222] shadow-sm rounded-lg border border-[#222] p-5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-white">
+          <Smartphone className="h-4 w-4 text-neutral-300" />
+          Register New Application
+        </div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <label className="space-y-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Project</span>
+            <select
+              value={newAppProjectKey}
+              onChange={(event) => setNewAppProjectKey(event.target.value)}
+              className="w-full rounded-lg border border-[#333] bg-[#000000] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            >
+              <option value="">Select a project...</option>
+              {state.projects.map((project) => (
+                <option key={project.id} value={project.project_key}>
+                  {project.name} ({project.project_key})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">App Name</span>
+            <input
+              placeholder="e.g. Arc Eleven Mobile"
+              value={newAppName}
+              onChange={(event) => setNewAppName(event.target.value)}
+              className="w-full rounded-lg border border-[#333] bg-[#000000] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            />
+          </label>
+          <label className="space-y-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">App Type</span>
+            <select
+              value={newAppType}
+              onChange={(event) => setNewAppType(event.target.value)}
+              className="w-full rounded-lg border border-[#333] bg-[#000000] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            >
+              {state.appTypes.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1.5 md:col-span-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Web Origins (Comma separated)</span>
+            <input
+              placeholder="https://example.com, https://app.example.com"
+              value={newAppOrigin}
+              onChange={(event) => setNewAppOrigin(event.target.value)}
+              className="w-full rounded-lg border border-[#333] bg-[#000000] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            />
+          </label>
+          <label className="space-y-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Bundle Identifiers</span>
+            <input
+              placeholder="android_package:com.app, ios_bundle:com.app"
+              value={newAppBundleId}
+              onChange={(event) => setNewAppBundleId(event.target.value)}
+              className="w-full rounded-lg border border-[#333] bg-[#000000] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            />
+          </label>
+        </div>
+        <div className="mt-5 flex items-center">
+          <button
+            type="button"
+            disabled={isCreatingApp}
+            onClick={createApplication}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-900 px-4 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-50"
+          >
+            <Smartphone className="h-4 w-4" />
+            {isCreatingApp ? 'Registering...' : 'Register Application'}
+          </button>
+        </div>
+      </section>
 
       <section className="bg-[#000000] border border-[#222] shadow-sm rounded-lg border border-[#222] p-5">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">

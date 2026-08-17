@@ -243,28 +243,97 @@ export async function seedPlatformAccess() {
   );
 }
 
-export async function listPlatformAccess() {
+export async function createPlatformApplication(input: {
+  projectKey: string;
+  name: string;
+  appType: string;
+  environment?: string;
+  notes?: string;
+  origins?: string[];
+  identifiers?: { platform: string; identifier: string }[];
+}) {
+  await ensurePlatformSchema();
+  const connectionString = controlConnectionString();
+  const appKey = input.name.toLowerCase().replace(/[^a-z0-9_]/g, '_') + '_' + Math.random().toString(36).substring(2, 6);
+
+  const res = await runQuery(
+    connectionString,
+    `INSERT INTO platform_applications (project_key, app_key, name, app_type, environment, notes)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [input.projectKey, appKey, input.name, input.appType, input.environment || 'production', input.notes || '']
+  );
+  const appId = res.rows[0].id;
+
+  if (input.origins && input.origins.length > 0) {
+    for (const origin of input.origins) {
+      if (origin.trim()) {
+        await runQuery(connectionString, `INSERT INTO platform_application_origins (application_id, origin) VALUES ($1, $2)`, [appId, origin.trim()]);
+      }
+    }
+  }
+
+  if (input.identifiers && input.identifiers.length > 0) {
+    for (const id of input.identifiers) {
+      if (id.platform.trim() && id.identifier.trim()) {
+        await runQuery(connectionString, `INSERT INTO platform_application_identifiers (application_id, platform, identifier) VALUES ($1, $2, $3)`, [appId, id.platform.trim(), id.identifier.trim()]);
+      }
+    }
+  }
+
+  return { id: appId, appKey };
+}
+
+export async function listPlatformAccess(userId: string, role: string) {
   await seedPlatformAccess();
   const connectionString = controlConnectionString();
+  
+  let projectsQuery = `SELECT * FROM platform_projects ORDER BY project_key;`;
+  let appsQuery = `SELECT * FROM platform_applications ORDER BY project_key, app_key;`;
+  let keysQuery = `SELECT k.id, k.application_id, k.key_prefix, k.name, k.environment, k.status, k.expires_at, k.revoked_at, k.last_used_at, k.created_at
+                   FROM platform_api_keys k ORDER BY k.created_at DESC;`;
+  let auditsQuery = `SELECT id, application_id, api_key_id, project_key, action, endpoint, result, ip_address, origin, created_at
+                     FROM platform_audit_logs ORDER BY created_at DESC LIMIT 60;`;
+
+  let queryParams: any[] = [];
+
+  if (role !== 'admin') {
+    projectsQuery = `
+      SELECT p.* FROM platform_projects p
+      INNER JOIN platform_project_users pu ON p.id = pu.project_id
+      WHERE pu.user_id = $1 ORDER BY p.project_key;
+    `;
+    appsQuery = `
+      SELECT a.* FROM platform_applications a
+      INNER JOIN platform_projects p ON a.project_key = p.project_key
+      INNER JOIN platform_project_users pu ON p.id = pu.project_id
+      WHERE pu.user_id = $1 ORDER BY a.project_key, a.app_key;
+    `;
+    keysQuery = `
+      SELECT k.id, k.application_id, k.key_prefix, k.name, k.environment, k.status, k.expires_at, k.revoked_at, k.last_used_at, k.created_at
+      FROM platform_api_keys k
+      INNER JOIN platform_applications a ON k.application_id = a.id
+      INNER JOIN platform_projects p ON a.project_key = p.project_key
+      INNER JOIN platform_project_users pu ON p.id = pu.project_id
+      WHERE pu.user_id = $1 ORDER BY k.created_at DESC;
+    `;
+    auditsQuery = `
+      SELECT al.id, al.application_id, al.api_key_id, al.project_key, al.action, al.endpoint, al.result, al.ip_address, al.origin, al.created_at
+      FROM platform_audit_logs al
+      INNER JOIN platform_projects p ON al.project_key = p.project_key
+      INNER JOIN platform_project_users pu ON p.id = pu.project_id
+      WHERE pu.user_id = $1 ORDER BY al.created_at DESC LIMIT 60;
+    `;
+    queryParams = [userId];
+  }
+
   const [projects, applications, keys, scopes, origins, identifiers, audits] = await Promise.all([
-    runQuery(connectionString, `SELECT * FROM platform_projects ORDER BY project_key;`),
-    runQuery(connectionString, `SELECT * FROM platform_applications ORDER BY project_key, app_key;`),
-    runQuery(
-      connectionString,
-      `SELECT k.id, k.application_id, k.key_prefix, k.name, k.environment, k.status, k.expires_at, k.revoked_at, k.last_used_at, k.created_at
-       FROM platform_api_keys k
-       ORDER BY k.created_at DESC;`
-    ),
+    runQuery(connectionString, projectsQuery, queryParams),
+    runQuery(connectionString, appsQuery, queryParams),
+    runQuery(connectionString, keysQuery, queryParams),
     runQuery(connectionString, `SELECT api_key_id, scope FROM platform_api_key_scopes ORDER BY scope;`),
     runQuery(connectionString, `SELECT application_id, origin FROM platform_application_origins ORDER BY origin;`),
     runQuery(connectionString, `SELECT application_id, platform, identifier FROM platform_application_identifiers ORDER BY platform, identifier;`),
-    runQuery(
-      connectionString,
-      `SELECT id, application_id, api_key_id, project_key, action, endpoint, result, ip_address, origin, created_at
-       FROM platform_audit_logs
-       ORDER BY created_at DESC
-       LIMIT 60;`
-    ),
+    runQuery(connectionString, auditsQuery, queryParams),
   ]);
 
   const scopesByKey = new Map<string, string[]>();
