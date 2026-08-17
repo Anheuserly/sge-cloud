@@ -2,6 +2,8 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runQuery, resolveConnectionString } from '@/lib/db';
+import { verifySession } from '@/lib/auth';
+import { validatePlatformKey } from '@/lib/platform-access';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,6 +19,20 @@ export async function GET(req: NextRequest) {
 
     if (!table) {
       return NextResponse.json({ success: false, error: 'Table name is required' }, { status: 400 });
+    }
+
+    // Security Check: Enforce API Key or UI Session
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+      const auth = await validatePlatformKey(req, `${table}.read`);
+      if (!auth.ok) {
+        return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+      }
+    } else {
+      const session = await verifySession(req);
+      if (!session) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     const connectionString = resolveConnectionString(preset);
