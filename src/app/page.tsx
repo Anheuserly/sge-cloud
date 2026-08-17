@@ -10,7 +10,7 @@ import { PlatformAccessView } from '@/components/PlatformAccessView';
 import { CreateTableModal } from '@/components/CreateTableModal';
 import { Toast } from '@/components/Toast';
 import { TableInfo, DatabaseOverview, ToastMessage, DatabasePreset } from '@/types/database';
-import { DATABASE_PRESETS } from '@/lib/constants';
+
 
 type ConfiguredPreset = Pick<DatabasePreset, 'id' | 'name' | 'description' | 'badge' | 'color'>;
 type ActiveView = 'overview' | 'table' | 'sql' | 'platform';
@@ -183,11 +183,11 @@ export default function Home() {
   const handleSelectPreset = (presetId: string) => {
     setCurrentPreset(presetId);
     setSelectedTable(null);
-    const pObj = DATABASE_PRESETS.find((p) => p.id === presetId);
+    const pObj = configuredPresets.find((p) => p.id === presetId);
     showToast(`Switched to ${pObj?.name || presetId}`, 'info');
   };
 
-  const currentPresetObj = DATABASE_PRESETS.find((p) => p.id === currentPreset);
+  const currentPresetObj = configuredPresets.find((p) => p.id === currentPreset);
   const presetName = currentPresetObj?.name || currentPreset;
 
   return (
@@ -238,7 +238,6 @@ export default function Home() {
               isLoading={isLoadingTables}
               presetName={presetName}
               connectionError={connectionError}
-              onRefresh={() => loadDatabase()}
               onRefresh={() => loadDatabase()}
               onOpenCreateTable={() => setIsCreateTableOpen(true)}
             />

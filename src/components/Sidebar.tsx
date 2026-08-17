@@ -14,7 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
-type ActiveView = 'overview' | 'table' | 'sql';
+type ActiveView = 'overview' | 'table' | 'sql' | 'platform';
 
 interface SidebarProps {
   tables: TableInfo[];

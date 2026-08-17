@@ -1,7 +1,7 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { runQuery, controlConnectionString } from '@/lib/db';
+import { runQuery, resolveConnectionString } from '@/lib/db';
 import { verifySession } from '@/lib/auth';
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized', success: false }, { status: 401 });
     }
 
-    const connStr = controlConnectionString();
+    const connStr = resolveConnectionString('sge_datahub');
 
     // Fetch projects for the user
     let projectsQuery = `

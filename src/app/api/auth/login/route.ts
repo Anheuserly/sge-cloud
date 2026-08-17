@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { runQuery, controlConnectionString } from '@/lib/db';
+import { runQuery, resolveConnectionString } from '@/lib/db';
 import { createSession } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const connStr = controlConnectionString();
+    const connStr = resolveConnectionString('sge_datahub');
     
     // Find user
     const userRes = await runQuery(

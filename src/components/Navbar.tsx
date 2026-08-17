@@ -7,7 +7,7 @@ import { DatabasePreset } from '@/types/database';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-type ActiveView = 'overview' | 'table' | 'sql';
+type ActiveView = 'overview' | 'table' | 'sql' | 'platform';
 
 interface NavbarProps {
   currentPreset: string;

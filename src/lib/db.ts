@@ -1,7 +1,7 @@
 import { Pool, QueryResult, QueryResultRow } from 'pg';
-import { DATABASE_PRESETS, resolveConnectionString } from '@/lib/constants';
+import { resolveConnectionString } from '@/lib/constants';
 
-export { DATABASE_PRESETS, resolveConnectionString };
+export { resolveConnectionString };
 
 export function createPool(connectionString: string): Pool {
   const pool = new Pool({

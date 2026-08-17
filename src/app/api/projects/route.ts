@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { runQuery, controlConnectionString } from '@/lib/db';
+import { runQuery, resolveConnectionString } from '@/lib/db';
 import { verifySession } from '@/lib/auth';
 
 export async function GET() {
@@ -9,7 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const connStr = controlConnectionString();
+    const connStr = resolveConnectionString('sge_datahub');
 
     // If admin, they see all projects. If not, only their projects.
     let projectsQuery = `
@@ -49,10 +49,6 @@ export async function GET() {
 
     const databasesByProject = dbsRes.rows.reduce((acc: any, db: any) => {
       if (!acc[db.project_id]) acc[db.project_id] = [];
-      // Verify the env var exists
-      const envVarValue = process.env[db.env_var_key];
-      const isConfigured = Boolean(envVarValue && envVarValue.length > 5);
-      
       acc[db.project_id].push({
         id: db.database_key,
         name: db.name,
@@ -60,7 +56,6 @@ export async function GET() {
         description: db.description,
         badge: db.badge,
         color: db.color,
-        isConfigured
       });
       return acc;
     }, {});
