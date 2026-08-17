@@ -62,9 +62,10 @@ interface PlatformAuditLog {
 
 interface PlatformState {
   projects: PlatformProject[];
+  databases: { id: string; project_id: string; database_key: string; name: string }[];
+  activeDatabaseTables: string[];
   applications: PlatformApplication[];
   auditLogs: PlatformAuditLog[];
-  availableScopes: string[];
   appTypes: string[];
 }
 
@@ -95,13 +96,27 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
     [state, selectedAppId]
   );
 
-  const loadAccess = async () => {
+  const [activeDatabaseKey, setActiveDatabaseKey] = useState<string>('');
+
+  const loadAccess = async (dbKeyToFetch = activeDatabaseKey) => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/platform/access');
+      const url = new URL('/api/platform/access', window.location.origin);
+      if (dbKeyToFetch) url.searchParams.set('activeDatabase', dbKeyToFetch);
+      
+      const res = await fetch(url.toString());
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Failed to load platform access.');
       setState(json);
+      if (!dbKeyToFetch && json.databases?.length > 0) {
+        setActiveDatabaseKey(json.databases[0].database_key);
+        // We need to fetch again with the new active database to get its tables and keys
+        const updatedUrl = new URL('/api/platform/access', window.location.origin);
+        updatedUrl.searchParams.set('activeDatabase', json.databases[0].database_key);
+        const secondRes = await fetch(updatedUrl.toString());
+        const secondJson = await secondRes.json();
+        setState(secondJson);
+      }
       setSelectedAppId((current) => current || json.applications?.[0]?.id || '');
     } catch (error: any) {
       onShowToast('Platform access error', 'error', error.message);
@@ -114,6 +129,12 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
     loadAccess();
   }, []);
 
+  const handleDatabaseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const dbKey = e.target.value;
+    setActiveDatabaseKey(dbKey);
+    loadAccess(dbKey);
+  };
+
   const toggleScope = (scope: string) => {
     setSelectedScopes((current) =>
       current.includes(scope) ? current.filter((item) => item !== scope) : [...current, scope]
@@ -121,8 +142,8 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
   };
 
   const createKey = async () => {
-    if (!selectedAppId || selectedScopes.length === 0) {
-      onShowToast('Select an app and at least one scope', 'error');
+    if (!selectedAppId || selectedScopes.length === 0 || !activeDatabaseKey) {
+      onShowToast('Select an app, database, and at least one scope', 'error');
       return;
     }
 
@@ -133,6 +154,7 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
         body: JSON.stringify({
           action: 'create_key',
           applicationId: selectedAppId,
+          activeDatabaseKey: activeDatabaseKey,
           name: keyName || defaultKeyName,
           scopes: selectedScopes,
           environment: selectedApp?.environment || 'production',
@@ -154,7 +176,7 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
       const res = await fetch('/api/platform/access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'revoke_key', keyId }),
+        body: JSON.stringify({ action: 'revoke_key', keyId, activeDatabaseKey }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Failed to revoke key.');
@@ -233,14 +255,35 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
               Manage project apps, allowed domains, mobile identifiers, hashed API keys, scoped permissions, revocation, expiry, and audit activity.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={loadAccess}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#333] bg-slate-900 px-3 text-xs font-semibold text-slate-200 hover:bg-slate-800"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </button>
+          
+          <div className="flex flex-col items-end gap-3 mt-4 md:mt-0">
+            {state?.databases && state.databases.length > 0 && (
+              <div className="flex items-center gap-2 bg-[#111] border border-[#333] px-3 py-1.5 rounded-lg">
+                <Server className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs text-neutral-400 font-medium">ACTIVE DATABASE</span>
+                <select
+                  value={activeDatabaseKey}
+                  onChange={handleDatabaseChange}
+                  className="bg-transparent text-sm text-white font-semibold outline-none focus:ring-0 ml-1 cursor-pointer"
+                >
+                  {state.databases.map((db) => (
+                    <option key={db.id} value={db.database_key}>
+                      {db.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <button
+              type="button"
+              onClick={() => loadAccess()}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#333] bg-slate-900 px-3 text-xs font-semibold text-slate-200 hover:bg-slate-800"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+          </div>
         </div>
       </section>
 
@@ -315,21 +358,55 @@ export const PlatformAccessView: React.FC<PlatformAccessViewProps> = ({ onShowTo
 
           <div className="mt-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Permissions</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {state.availableScopes.map((scope) => (
-                <button
-                  key={scope}
-                  type="button"
-                  onClick={() => toggleScope(scope)}
-                  className={`rounded-md border px-2.5 py-1 text-xs font-mono transition ${
-                    selectedScopes.includes(scope)
-                      ? 'border-cyan-600 bg-cyan-950/80 text-cyan-200'
-                      : 'border-[#222] bg-[#000000] text-neutral-400 hover:text-slate-200'
-                  }`}
-                >
-                  {scope}
-                </button>
-              ))}
+            <div className="mt-2 space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {['all', 'admin'].map((scope) => (
+                  <button
+                    key={scope}
+                    type="button"
+                    onClick={() => toggleScope(scope)}
+                    className={`rounded-md border px-2.5 py-1 text-xs font-mono transition ${
+                      selectedScopes.includes(scope)
+                        ? 'border-rose-600 bg-rose-950/80 text-rose-200'
+                        : 'border-[#222] bg-[#000000] text-neutral-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {scope}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {state.activeDatabaseTables && state.activeDatabaseTables.length > 0 ? (
+                  state.activeDatabaseTables.map((table) => (
+                    <div key={table} className="p-3 bg-[#111] border border-[#222] rounded-lg">
+                      <p className="text-xs font-mono text-slate-300 mb-2">{table}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {['read', 'create', 'update', 'delete'].map((action) => {
+                          const scope = `${table}.${action}`;
+                          return (
+                            <button
+                              key={scope}
+                              type="button"
+                              onClick={() => toggleScope(scope)}
+                              className={`rounded-md border px-2.5 py-1 text-xs font-mono transition ${
+                                selectedScopes.includes(scope)
+                                  ? 'border-cyan-600 bg-cyan-950/80 text-cyan-200'
+                                  : 'border-[#333] bg-[#000] text-neutral-500 hover:text-slate-300'
+                              }`}
+                            >
+                              {action}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-xs text-neutral-500 border border-dashed border-[#333] rounded-lg col-span-2 text-center">
+                    No tables found in this database, or schema not accessible.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
