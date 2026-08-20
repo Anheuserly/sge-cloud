@@ -39,15 +39,16 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
   const [indexes, setIndexes] = useState<TableIndex[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>({
     page: 1,
-    limit: 25,
+    limit: 50,
     totalRows: 0,
     totalPages: 1,
   });
   const [primaryKey, setPrimaryKey] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [sortBy, setSortBy] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
@@ -94,7 +95,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
         preset,
       });
 
-      if (search) queryParams.set('search', search);
+      if (appliedSearch) queryParams.set('search', appliedSearch);
       if (sortBy) {
         queryParams.set('sortBy', sortBy);
         queryParams.set('sortOrder', sortOrder);
@@ -120,20 +121,31 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
   useEffect(() => {
     fetchSchema();
     fetchData();
-  }, [table, preset, pagination.page, pagination.limit, sortBy, sortOrder]);
+  }, [table, preset, pagination.page, pagination.limit, sortBy, sortOrder, appliedSearch]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setAppliedSearch(search.trim());
     setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchData();
   };
+
+  const visiblePages = Array.from(
+    { length: Math.min(5, pagination.totalPages) },
+    (_, index) => {
+      const start = Math.max(
+        1,
+        Math.min(pagination.page - 2, pagination.totalPages - 4),
+      );
+      return start + index;
+    },
+  );
 
   const handleSort = (colName: string) => {
     if (sortBy === colName) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(colName);
-      setSortOrder('asc');
+      setSortOrder('desc');
     }
   };
 
@@ -351,10 +363,10 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
                   }
                   className="bg-slate-800 text-slate-200 px-2 py-1 rounded-lg border border-[#333] focus:outline-none"
                 >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
                   <option value={50}>50</option>
                   <option value={100}>100</option>
+                  <option value={250}>250</option>
+                  <option value={500}>500</option>
                 </select>
               </div>
 
@@ -505,8 +517,12 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
           {/* Pagination Footer */}
           <div className="p-3 md:px-6 border-t border-[#222] bg-slate-900/90 flex items-center justify-between text-xs text-neutral-400">
             <div>
-              Showing {rows.length} of {pagination.totalRows.toLocaleString()} rows (Page {pagination.page} of{' '}
-              {pagination.totalPages})
+              {pagination.totalRows === 0
+                ? 'No rows'
+                : `Showing ${((pagination.page - 1) * pagination.limit + 1).toLocaleString()}-${Math.min(
+                    pagination.page * pagination.limit,
+                    pagination.totalRows,
+                  ).toLocaleString()} of ${pagination.totalRows.toLocaleString()} rows`}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -518,7 +534,25 @@ export const TableDataView: React.FC<TableDataViewProps> = ({
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              <span className="font-mono text-slate-200">{pagination.page}</span>
+              <div className="hidden sm:flex items-center space-x-1" aria-label="Table pages">
+                {visiblePages.map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    onClick={() => setPagination((prev) => ({ ...prev, page: pageNumber }))}
+                    aria-current={pageNumber === pagination.page ? 'page' : undefined}
+                    className={`min-w-8 h-8 px-2 rounded-lg font-mono transition-colors ${
+                      pageNumber === pagination.page
+                        ? 'bg-cyan-600 text-white'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+              </div>
+              <span className="sm:hidden font-mono text-slate-200">
+                {pagination.page} / {pagination.totalPages}
+              </span>
 
               <button
                 disabled={pagination.page >= pagination.totalPages}
